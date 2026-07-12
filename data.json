@@ -252,32 +252,7 @@
     "date": "2026-07-12",
     "_needsReview": true
   },
-  {
-    "department": "CBIC",
-    "category": "Notification",
-    "title": "English",
-    "summary": "English",
-    "priority": "Medium",
-    "source": "https://cbic-gst.gov.in/pdf/NN-31-2024-Eng.pdf",
-    "keyChanges": [],
-    "effectiveDate": null,
-    "actionRequired": "Review the source document for details.",
-    "date": "2026-07-12",
-    "_needsReview": true
-  },
-  {
-    "department": "CBIC",
-    "category": "Notification",
-    "title": "English",
-    "summary": "English",
-    "priority": "Medium",
-    "source": "https://cbic-gst.gov.in/pdf/NN-30-2024-Eng.pdf",
-    "keyChanges": [],
-    "effectiveDate": null,
-    "actionRequired": "Review the source document for details.",
-    "date": "2026-07-12",
-    "_needsReview": true
-  },
+ 
   {
     "department": "CBIC",
     "category": "Notification",
