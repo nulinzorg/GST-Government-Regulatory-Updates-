@@ -87,8 +87,24 @@ def scrape_cbic():
                 a = li.find("a")
                 if not a or not a.get("href"):
                     continue
+                title_text = a.get_text().strip()
+                href = a["href"]
+                # Defensive filtering: the naive "next <ul> after the heading"
+                # approach can accidentally grab an unrelated list on the page
+                # (e.g. an English/Hindi language-toggle menu, or a nav menu) if
+                # it happens to sit between the heading and the real list in the
+                # page's structure. Reject anything that doesn't look like a
+                # real notification: must link to a PDF, and the title must be
+                # more than a couple of words (a genuine notification title is
+                # never just "English" or "Hindi").
+                if "/pdf/" not in href.lower():
+                    continue
+                if len(title_text.split()) < 3:
+                    continue
+                if title_text.lower() in {"english", "hindi", "हिंदी"}:
+                    continue
                 items.append(to_regulatory_update(
-                    title=a.get_text(), href=urljoin(CBIC_HOME, a["href"]),
+                    title=title_text, href=urljoin(CBIC_HOME, href),
                     dept="CBIC", category="Notification", priority="Medium",
                     item_date=None, needs_review=True,
                 ))
