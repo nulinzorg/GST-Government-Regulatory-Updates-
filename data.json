@@ -1,0 +1,138 @@
+[
+  {
+    "id": 1,
+    "date": "2026-07-09",
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Scheduled maintenance on ACES-GST application, 11 July 2026",
+    "summary": "CBIC's Directorate General of Systems has scheduled a maintenance window on the ACES-GST application from 18:00 to 23:00 hrs on 11 July 2026. Services related to Central Excise, Service Tax, HSNS, SBS and SVLDRS will be unavailable during this period.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/",
+    "keyChanges": [
+      "Maintenance window fixed for 18:00–23:00 hrs on 11 July 2026",
+      "Central Excise, Service Tax, HSNS, SBS and SVLDRS services affected",
+      "GST return filing on the main GST portal is not affected"
+    ],
+    "effectiveDate": "2026-07-11",
+    "actionRequired": "Taxpayers needing ACES-GST services (Central Excise, Service Tax, HSNS, SBS, SVLDRS) should plan filings outside the maintenance window."
+  },
+  {
+    "id": 2,
+    "date": "2026-07-02",
+    "department": "NIC e-Way Bill",
+    "category": "FAQ",
+    "title": "GSTN FAQs on Voluntary Closure of e-Way Bill",
+    "summary": "GSTN published a detailed FAQ document clarifying the Voluntary e-Way Bill Closure facility: closure is optional, can be done on the date of delivery or the immediately succeeding day, and remains available up to one day after the EWB's validity expires.",
+    "priority": "Medium",
+    "source": "https://tutorial.gst.gov.in/downloads/news/faqs_on_voluntary_closure_of_e_way_bill_approved.pdf",
+    "keyChanges": [
+      "Confirms EWB closure is voluntary, not mandatory",
+      "Closure allowed on the date of delivery or the immediately succeeding day",
+      "Closure functionality stays available up to one day after EWB validity expiry"
+    ],
+    "effectiveDate": "2026-08-01",
+    "actionRequired": "Review the FAQ document and align internal delivery-confirmation processes before the 1 August 2026 go-live."
+  },
+  {
+    "id": 3,
+    "date": "2026-07-02",
+    "department": "NIC e-Invoice",
+    "category": "FAQ",
+    "title": "GSTN FAQs on mandatory Ship-to GSTIN across e-Invoice, e-Way Bill and IRN flows",
+    "summary": "A companion FAQ set explains how the mandatory Ship-to GSTIN requirement applies across the e-Way Bill API, e-Invoice API and e-Way Bill-by-IRN flows, including validation rules and treatment of unregistered consignees.",
+    "priority": "Medium",
+    "source": "https://tutorial.gst.gov.in/downloads/news/faqs_on_ship_to_field_approved_version.pdf",
+    "keyChanges": [
+      "Ship-to GSTIN mandatory wherever the Ship-to party is registered; 'URP' otherwise",
+      "In the Generate IRN payload, ShipDtls.Gstin becomes conditionally mandatory",
+      "Ship-to GSTIN will not be printed on the EWB or exposed via GET EWB APIs"
+    ],
+    "effectiveDate": "2026-08-01",
+    "actionRequired": "e-Invoice API integrators and IRPs should test the Generate IRN + e-Way Bill flow against the updated schema before 1 August 2026."
+  },
+  {
+    "id": 4,
+    "date": "2026-07-01",
+    "department": "PIB",
+    "category": "Press Release",
+    "title": "Gross GST collections for June 2026 rise 13.9% to ₹1,94,812 crore",
+    "summary": "Provisional data published on the GST portal shows gross GST revenue for June 2026 grew 13.9% year-on-year, led by a 34.6% surge in import-related GST. Net revenue after refunds rose 11.2% to ₹1,62,377 crore.",
+    "priority": "Low",
+    "source": "https://tutorial.gst.gov.in/downloads/news/for_publishing_monthly_gst_revenue_june_2026.pdf",
+    "keyChanges": [
+      "Gross GST collection: ₹1,94,812 crore, up 13.9% YoY",
+      "Import-led growth: import GST up 34.6% versus 6.5% domestic growth",
+      "Refunds up 29.1% to ₹32,436 crore; net revenue ₹1,62,377 crore"
+    ],
+    "effectiveDate": "2026-07-01",
+    "actionRequired": "Informational only — useful context for revenue and compliance trend analysis."
+  },
+  {
+    "id": 5,
+    "date": "2026-06-30",
+    "department": "GST",
+    "category": "Notification",
+    "title": "GST Appellate Tribunal appeal deadline extended to 31 July 2026",
+    "summary": "Notification S.O. 3502(E) extends the last date for filing appeals and applications before the GST Appellate Tribunal to 31 July 2026, superseding the earlier 30 June 2026 deadline, after stakeholders flagged portal filing pressure.",
+    "priority": "High",
+    "source": "https://cbic-gst.gov.in/central-tax-notifications.html",
+    "keyChanges": [
+      "Appeals against orders communicated before 1 May 2026: file by 31 July 2026",
+      "Appeals against orders communicated on/after 1 May 2026: normal 3-month limit applies",
+      "Applications on orders passed before 1 Feb 2026: file by 31 July 2026; otherwise normal 6-month limit"
+    ],
+    "effectiveDate": "2026-07-31",
+    "actionRequired": "Taxpayers with pending GSTAT appeals or applications should file before 31 July 2026 rather than waiting for a further extension."
+  },
+  {
+    "id": 6,
+    "date": "2026-06-24",
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Advisory No. 11/2026 — Two-Factor Authentication mandatory on ACES-GST portal",
+    "summary": "CBIC mandates two-factor authentication for Central Excise, SBS and HSNS taxpayers logging into the ACES-GST application, aligning the portal's login security with the main GST portal's existing 2FA rollout.",
+    "priority": "High",
+    "source": "https://cbic-gst.gov.in/",
+    "keyChanges": [
+      "2FA now mandatory for Central Excise, SBS and HSNS taxpayer logins",
+      "OTP-based verification required in addition to existing credentials",
+      "Applies specifically to the ACES-GST application, not the main GST portal"
+    ],
+    "effectiveDate": "2026-06-24",
+    "actionRequired": "Central Excise, SBS and HSNS taxpayers should confirm registered mobile numbers are current before their next ACES-GST login."
+  },
+  {
+    "id": 7,
+    "date": "2026-06-17",
+    "department": "NIC e-Invoice",
+    "category": "Notification",
+    "title": "Advisory on e-Invoice API and e-Way Bill by IRN API changes",
+    "summary": "GSTN's advisory on e-Invoice API and e-Way Bill by IRN API changes confirms Ship-to GSTIN becomes mandatory whenever Ship-to details are furnished, adds a Trade Name field, and formally sets 1 August 2026 as the production go-live.",
+    "priority": "Medium",
+    "source": "https://tutorial.gst.gov.in/downloads/news/advisory_einvoice_api_ewb_by_irn_approved.pdf",
+    "keyChanges": [
+      "Ship-to GSTIN mandatory in the IRN payload wherever Ship-to details are given",
+      "New optional 'TrdNm' (Trade Name) field added under ExpShipDtls",
+      "Ship-to GSTIN fixed at IRN generation cannot be amended for B2B/SEZ EWBs"
+    ],
+    "effectiveDate": "2026-08-01",
+    "actionRequired": "ERP and e-Invoice API integrators should re-test against the 1 August 2026 production timeline."
+  },
+  {
+    "id": 8,
+    "date": "2026-05-21",
+    "department": "NIC e-Way Bill",
+    "category": "Notification",
+    "title": "Advisory on enhancements to the e-Way Bill portal",
+    "summary": "GSTN's original advisory introducing two e-Way Bill enhancements: mandatory Ship-to GSTIN capture for Bill-To/Ship-To transactions, and a new voluntary facility letting suppliers, recipients, transporters or drivers formally close an e-Way Bill after delivery.",
+    "priority": "High",
+    "source": "https://tutorial.gst.gov.in/downloads/news/gstn_advisory_ewb_approved.pdf",
+    "keyChanges": [
+      "Ship-to GSTIN mandatory for Bill-To/Ship-To transactions ('URP' for unregistered consignees)",
+      "New voluntary EWB closure facility via portal, mobile OTP, or API",
+      "Originally scheduled for 15 June 2026 (later postponed to 1 August 2026)"
+    ],
+    "effectiveDate": "2026-08-01",
+    "actionRequired": "Note the original 15 June 2026 date was postponed — the changes now go live 1 August 2026."
+  }
+]

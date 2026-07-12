@@ -1,0 +1,6 @@
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+
+# Email uses only Python's built-in smtplib/email modules — no extra
+# package needed. Sends via Brevo's free SMTP relay (300/day, no card,
+# no 2-Step Verification) instead of Gmail.

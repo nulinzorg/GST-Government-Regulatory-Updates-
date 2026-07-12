@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Government Regulatory Updates</title>
+<style>
+  :root {
+    --bg: #F7F8FA;
+    --card: #FFFFFF;
+    --border: #E5E7EB;
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
+    --text-muted: #9CA3AF;
+    --navy: #1E3A5F;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px; padding: 16px 0;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-icon {
+    width: 40px; height: 40px; border-radius: 10px; background: var(--navy);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 15px;
+  }
+  .brand h1 { font-size: 17px; margin: 0; font-weight: 600; }
+  .brand p { font-size: 12px; margin: 0; color: var(--text-secondary); }
+  .controls { display: flex; gap: 10px; align-items: center; flex: 1; min-width: 260px; justify-content: flex-end; }
+  #search {
+    flex: 1; max-width: 320px; padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--border); font-size: 14px;
+  }
+  button {
+    font: inherit; cursor: pointer;
+  }
+  #refresh-btn {
+    padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: white; font-size: 14px; font-weight: 500;
+  }
+  #refresh-btn:hover { background: #F9FAFB; }
+  .last-updated { font-size: 12px; color: var(--text-muted); padding-bottom: 12px; }
+  .fallback-banner {
+    background: #FFFBEB; color: #92400E; font-size: 12px;
+    padding: 8px 12px; border-radius: 8px; margin: 12px 0;
+  }
+  .subscribe-box {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: white; border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; margin: 12px 0;
+  }
+  .subscribe-box input[type="email"] {
+    padding: 6px 10px; border-radius: 7px; border: 1px solid var(--border); font-size: 13px; min-width: 220px;
+  }
+  .subscribe-box button {
+    background: var(--navy); color: white; border: none; border-radius: 7px;
+    padding: 6px 14px; font-size: 13px; font-weight: 500;
+  }
+
+  main { padding: 20px 0 60px; }
+
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
+  @media (min-width: 800px) { .cards { grid-template-columns: repeat(4, 1fr); } }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; text-align: left; transition: box-shadow .15s;
+  }
+  .card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .card.active { box-shadow: 0 0 0 1px var(--accent); border-color: var(--accent); }
+  .card-top { display: flex; justify-content: space-between; align-items: center; }
+  .card-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+  .card-value { font-size: 26px; font-weight: 600; margin: 10px 0 2px; }
+  .card-hint { font-size: 11px; color: var(--text-muted); }
+  .card-hint.active-hint { font-weight: 500; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .dept-toggles { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dept-toggle {
+    border-radius: 999px; border: 1px solid var(--border); background: white;
+    padding: 6px 12px; font-size: 12px; font-weight: 500; color: var(--text-secondary);
+  }
+  .dept-toggle.active { color: white; }
+  select, input[type="date"] {
+    padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border);
+    font-size: 13px; background: white;
+  }
+  .clear-link { font-size: 13px; font-weight: 500; color: var(--navy); background: none; border: none; text-decoration: underline; }
+
+  .table-section { margin-top: 18px; }
+  .table-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .table-head h2 { font-size: 14px; font-weight: 600; margin: 0; }
+  .table-head span { font-size: 12px; color: var(--text-muted); }
+
+  table { width: 100%; border-collapse: collapse; background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  th, td { text-align: left; padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #F1F2F4; }
+  th { color: var(--text-secondary); font-weight: 500; background: white; }
+  tr:last-child td { border-bottom: none; }
+  tr.data-row:hover { background: #FAFAFA; }
+  .dept-seal {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 999px; color: white;
+    font-size: 9px; font-weight: 700; margin-right: 8px; vertical-align: middle;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; border-radius: 999px;
+    padding: 4px 10px; font-size: 11px; font-weight: 500;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .view-btn {
+    background: var(--navy); color: white; border: none; border-radius: 8px;
+    padding: 6px 12px; font-size: 12px; font-weight: 500;
+  }
+  .source-link { font-size: 12px; font-weight: 500; color: var(--navy); text-decoration: none; }
+  .source-row { display: flex; align-items: center; gap: 6px; }
+  .copy-btn {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    padding: 3px 7px; font-size: 11px; color: var(--text-secondary); line-height: 1;
+  }
+  .copy-btn:hover { background: #F3F4F6; }
+  .copy-btn.copied { color: #15803D; border-color: #86EFAC; background: #F0FDF4; }
+  .empty-state { text-align: center; padding: 40px 20px; background: white; border: 1px solid var(--border); border-radius: 12px; }
+
+  #overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 50;
+  }
+  #panel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 460px;
+    background: white; box-shadow: -8px 0 24px rgba(0,0,0,0.1); overflow-y: auto;
+    transform: translateX(100%); transition: transform .25s ease-out;
+  }
+  #panel.open { transform: translateX(0); }
+  .panel-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: white;
+  }
+  .panel-close { background: none; border: none; font-size: 22px; color: var(--text-secondary); line-height: 1; }
+  .panel-body { padding: 22px; color: #1F2937; }
+  .panel-body h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #4B5563; margin: 20px 0 9px; }
+  .panel-body h3:first-child { margin-top: 0; }
+  .panel-title { font-size: 19px; font-weight: 700; line-height: 1.45; margin: 0 0 10px; color: #0F172A; }
+  .panel-body p, .key-changes li { font-size: 14.5px; line-height: 1.65; }
+  .key-changes { padding-left: 20px; margin: 0; }
+  .key-changes li { margin-bottom: 8px; }
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .meta-box { background: var(--bg); border-radius: 8px; padding: 11px; }
+  .meta-box p:first-child { font-size: 11.5px; color: #4B5563; margin: 0; font-weight: 500; }
+  .meta-box p:last-child { font-size: 14px; font-weight: 700; margin: 4px 0 0; color: #111827; }
+  .action-required { background: #FFFBEB; border-left: 4px solid #D97706; padding: 11px 13px; font-size: 14px; line-height: 1.6; border-radius: 0 8px 8px 0; color: #78350F; }
+  .source-url-row {
+    display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 8px;
+    padding: 9px 11px; margin-top: 6px;
+  }
+  .source-url-text {
+    font-size: 12px; color: #374151; word-break: break-all; flex: 1; font-family: ui-monospace, Menlo, Consolas, monospace;
+  }
+  .source-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--navy); color: white; text-decoration: none; border-radius: 8px;
+    padding: 11px; font-size: 14px; font-weight: 600; margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="header-top">
+      <div class="brand">
+        <div class="brand-icon">GST</div>
+        <div>
+          <h1>Government Regulatory Updates</h1>
+          <p>GST · CBIC · NIC e-Way Bill · NIC e-Invoice · PIB</p>
+          <p style="margin-top:2px;">Auto-refreshes hourly via a scheduled GitHub Action — no local server needed</p>
+        </div>
+      </div>
+      <div class="controls">
+        <input id="search" type="text" placeholder="Search updates..." />
+        <button id="refresh-btn">Refresh</button>
+      </div>
+    </div>
+    <div class="last-updated" id="last-updated">Loading...</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="fallback-banner" class="fallback-banner" style="display:none;">
+    Showing bundled fallback data — data.json wasn't reachable. If you're viewing this locally, make sure
+    dashboard.html and data.json are in the same folder. If this is hosted on GitHub Pages, check that the
+    latest Actions run succeeded (see the repo's Actions tab).
+  </div>
+
+  <div class="subscribe-box">
+    <span style="font-size:13px; font-weight:500;">Email alerts:</span>
+    <span style="font-size:12.5px; color:#4B5563;">
+      This hosted version has no live server to subscribe through directly. To receive alerts, add your email
+      to <code>subscribers.json</code> in the repo and commit — the next scheduled run will start including you.
+    </span>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="cards" id="cards"></div>
+
+  <div class="filters">
+    <span style="font-size:12px; color: var(--text-secondary); font-weight:500;">Departments</span>
+    <div class="dept-toggles" id="dept-toggles"></div>
+  </div>
+  <div class="filters" style="margin-bottom: 18px;">
+    <select id="category-filter"><option value="">Category</option></select>
+    <select id="priority-filter"><option value="">Priority</option></select>
+    <span style="font-size:12px; color: var(--text-secondary);">From</span>
+    <input type="date" id="date-from" />
+    <span style="font-size:12px; color: var(--text-secondary);">To</span>
+    <input type="date" id="date-to" />
+    <button class="clear-link" id="clear-filters" style="display:none;">Clear filters</button>
+  </div>
+
+  <div class="table-section" id="table-section">
+    <div class="table-head">
+      <h2>Latest Updates</h2>
+      <span id="count-label"></span>
+    </div>
+    <div id="table-container"></div>
+  </div>
+</main>
+
+<div id="overlay"></div>
+<div id="panel"></div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Config — mirrors the React version's DEPARTMENTS / PRIORITY_STYLES
+// ---------------------------------------------------------------------------
+const DEPARTMENTS = {
+  "GST": { initials: "GST", color: "#1E3A5F" },
+  "CBIC": { initials: "CB", color: "#0F766E" },
+  "NIC e-Way Bill": { initials: "EWB", color: "#3730A3" },
+  "NIC e-Invoice": { initials: "INV", color: "#6D28D9" },
+  "PIB": { initials: "PIB", color: "#854D0E" },
+};
+const CATEGORIES = ["Notification", "Circular", "Order", "Press Release", "FAQ", "Amendment"];
+const PRIORITIES = ["High", "Medium", "Low"];
+const PRIORITY_STYLES = {
+  High:   { bg: "#FEF2F2", text: "#B91C1C", dot: "#DC2626" },
+  Medium: { bg: "#FFFBEB", text: "#B45309", dot: "#D97706" },
+  Low:    { bg: "#F0FDF4", text: "#15803D", dot: "#16A34A" },
+};
+
+// Small bundled fallback (same as the seed data shipped in data.json) in
+// case the JSON fetch fails entirely.
+const SEED_UPDATES = [
+  {
+    "id": 1,
+    "date": "2026-07-09",
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Scheduled maintenance on ACES-GST application, 11 July 2026",
+    "summary": "CBIC's Directorate General of Systems has scheduled a maintenance window on the ACES-GST application from 18:00 to 23:00 hrs on 11 July 2026. Services related to Central Excise, Service Tax, HSNS, SBS and SVLDRS will be unavailable during this period.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/",
+    "keyChanges": [
+      "Maintenance window fixed for 18:00\u201323:00 hrs on 11 July 2026",
+      "Central Excise, Service Tax, HSNS, SBS and SVLDRS services affected",
+      "GST return filing on the main GST portal is not affected"
+    ],
+    "effectiveDate": "2026-07-11",
+    "actionRequired": "Taxpayers needing ACES-GST services (Central Excise, Service Tax, HSNS, SBS, SVLDRS) should plan filings outside the maintenance window."
+  },
+  {
+    "id": 2,
+    "date": "2026-07-02",
+    "department": "NIC e-Way Bill",
+    "category": "FAQ",
+    "title": "GSTN FAQs on Voluntary Closure of e-Way Bill",
+    "summary": "GSTN published a detailed FAQ document clarifying the Voluntary e-Way Bill Closure facility: closure is optional, can be done on the date of delivery or the immediately succeeding day, and remains available up to one day after the EWB's validity expires.",
+    "priority": "Medium",
+    "source": "https://tutorial.gst.gov.in/downloads/news/faqs_on_voluntary_closure_of_e_way_bill_approved.pdf",
+    "keyChanges": [
+      "Confirms EWB closure is voluntary, not mandatory",
+      "Closure allowed on the date of delivery or the immediately succeeding day",
+      "Closure functionality stays available up to one day after EWB validity expiry"
+    ],
+    "effectiveDate": "2026-08-01",
+    "actionRequired": "Review the FAQ document and align internal delivery-confirmation processes before the 1 August 2026 go-live."
+  },
+  {
+    "id": 3,
+    "date": "2026-07-02",
+    "department": "NIC e-Invoice",
+    "category": "FAQ",
+    "title": "GSTN FAQs on mandatory Ship-to GSTIN across e-Invoice, e-Way Bill and IRN flows",
+    "summary": "A companion FAQ set explains how the mandatory Ship-to GSTIN requirement applies across the e-Way Bill API, e-Invoice API and e-Way Bill-by-IRN flows, including validation rules and treatment of unregistered consignees.",
+    "priority": "Medium",
+    "source": "https://tutorial.gst.gov.in/downloads/news/faqs_on_ship_to_field_approved_version.pdf",
+    "keyChanges": [
+      "Ship-to GSTIN mandatory wherever the Ship-to party is registered; 'URP' otherwise",
+      "In the Generate IRN payload, ShipDtls.Gstin becomes conditionally mandatory",
+      "Ship-to GSTIN will not be printed on the EWB or exposed via GET EWB APIs"
+    ],
+    "effectiveDate": "2026-08-01",
+    "actionRequired": "e-Invoice API integrators and IRPs should test the Generate IRN + e-Way Bill flow against the updated schema before 1 August 2026."
+  },
+  {
+    "id": 4,
+    "date": "2026-07-01",
+    "department": "PIB",
+    "category": "Press Release",
+    "title": "Gross GST collections for June 2026 rise 13.9% to \u20b91,94,812 crore",
+    "summary": "Provisional data published on the GST portal shows gross GST revenue for June 2026 grew 13.9% year-on-year, led by a 34.6% surge in import-related GST. Net revenue after refunds rose 11.2% to \u20b91,62,377 crore.",
+    "priority": "Low",
+    "source": "https://tutorial.gst.gov.in/downloads/news/for_publishing_monthly_gst_revenue_june_2026.pdf",
+    "keyChanges": [
+      "Gross GST collection: \u20b91,94,812 crore, up 13.9% YoY",
+      "Import-led growth: import GST up 34.6% versus 6.5% domestic growth",
+      "Refunds up 29.1% to \u20b932,436 crore; net revenue \u20b91,62,377 crore"
+    ],
+    "effectiveDate": "2026-07-01",
+    "actionRequired": "Informational only \u2014 useful context for revenue and compliance trend analysis."
+  },
+  {
+    "id": 5,
+    "date": "2026-06-30",
+    "department": "GST",
+    "category": "Notification",
+    "title": "GST Appellate Tribunal appeal deadline extended to 31 July 2026",
+    "summary": "Notification S.O. 3502(E) extends the last date for filing appeals and applications before the GST Appellate Tribunal to 31 July 2026, superseding the earlier 30 June 2026 deadline, after stakeholders flagged portal filing pressure.",
+    "priority": "High",
+    "source": "https://cbic-gst.gov.in/central-tax-notifications.html",
+    "keyChanges": [
+      "Appeals against orders communicated before 1 May 2026: file by 31 July 2026",
+      "Appeals against orders communicated on/after 1 May 2026: normal 3-month limit applies",
+      "Applications on orders passed before 1 Feb 2026: file by 31 July 2026; otherwise normal 6-month limit"
+    ],
+    "effectiveDate": "2026-07-31",
+    "actionRequired": "Taxpayers with pending GSTAT appeals or applications should file before 31 July 2026 rather than waiting for a further extension."
+  },
+  {
+    "id": 6,
+    "date": "2026-06-24",
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Advisory No. 11/2026 \u2014 Two-Factor Authentication mandatory on ACES-GST portal",
+    "summary": "CBIC mandates two-factor authentication for Central Excise, SBS and HSNS taxpayers logging into the ACES-GST application, aligning the portal's login security with the main GST portal's existing 2FA rollout.",
+    "priority": "High",
+    "source": "https://cbic-gst.gov.in/",
+    "keyChanges": [
+      "2FA now mandatory for Central Excise, SBS and HSNS taxpayer logins",
+      "OTP-based verification required in addition to existing credentials",
+      "Applies specifically to the ACES-GST application, not the main GST portal"
+    ],
+    "effectiveDate": "2026-06-24",
+    "actionRequired": "Central Excise, SBS and HSNS taxpayers should confirm registered mobile numbers are current before their next ACES-GST login."
+  },
+  {
+    "id": 7,
+    "date": "2026-06-17",
+    "department": "NIC e-Invoice",
+    "category": "Notification",
+    "title": "Advisory on e-Invoice API and e-Way Bill by IRN API changes",
+    "summary": "GSTN's advisory on e-Invoice API and e-Way Bill by IRN API changes confirms Ship-to GSTIN becomes mandatory whenever Ship-to details are furnished, adds a Trade Name field, and formally sets 1 August 2026 as the production go-live.",
+    "priority": "Medium",
+    "source": "https://tutorial.gst.gov.in/downloads/news/advisory_einvoice_api_ewb_by_irn_approved.pdf",
+    "keyChanges": [
+      "Ship-to GSTIN mandatory in the IRN payload wherever Ship-to details are given",
+      "New optional 'TrdNm' (Trade Name) field added under ExpShipDtls",
+      "Ship-to GSTIN fixed at IRN generation cannot be amended for B2B/SEZ EWBs"
+    ],
+    "effectiveDate": "2026-08-01",
+    "actionRequired": "ERP and e-Invoice API integrators should re-test against the 1 August 2026 production timeline."
+  },
+  {
+    "id": 8,
+    "date": "2026-05-21",
+    "department": "NIC e-Way Bill",
+    "category": "Notification",
+    "title": "Advisory on enhancements to the e-Way Bill portal",
+    "summary": "GSTN's original advisory introducing two e-Way Bill enhancements: mandatory Ship-to GSTIN capture for Bill-To/Ship-To transactions, and a new voluntary facility letting suppliers, recipients, transporters or drivers formally close an e-Way Bill after delivery.",
+    "priority": "High",
+    "source": "https://tutorial.gst.gov.in/downloads/news/gstn_advisory_ewb_approved.pdf",
+    "keyChanges": [
+      "Ship-to GSTIN mandatory for Bill-To/Ship-To transactions ('URP' for unregistered consignees)",
+      "New voluntary EWB closure facility via portal, mobile OTP, or API",
+      "Originally scheduled for 15 June 2026 (later postponed to 1 August 2026)"
+    ],
+    "effectiveDate": "2026-08-01",
+    "actionRequired": "Note the original 15 June 2026 date was postponed \u2014 the changes now go live 1 August 2026."
+  }
+];
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let ALL_UPDATES = [];
+let filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: "", dateTo: "" };
+let query = "";
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+function fmtDate(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// ---------------------------------------------------------------------------
+// Data loading
+// ---------------------------------------------------------------------------
+async function loadData() {
+  document.getElementById("last-updated").textContent = "Refreshing...";
+  try {
+    const res = await fetch("./data.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    if (!Array.isArray(json) || json.length === 0) throw new Error("empty data.json");
+    ALL_UPDATES = json;
+    document.getElementById("fallback-banner").style.display = "none";
+    document.getElementById("last-updated").textContent = "Last updated " + new Date().toLocaleString();
+  } catch (err) {
+    console.warn("Falling back to bundled seed data:", err.message);
+    ALL_UPDATES = SEED_UPDATES;
+    document.getElementById("fallback-banner").style.display = "block";
+    document.getElementById("last-updated").textContent = "Using bundled fallback data";
+  }
+  render();
+}
+
+// ---------------------------------------------------------------------------
+// Filtering
+// ---------------------------------------------------------------------------
+function getFilteredUpdates() {
+  const q = query.trim().toLowerCase();
+  return ALL_UPDATES.filter(u => {
+    if (!filters.departments.includes(u.department)) return false;
+    if (filters.category && u.category !== filters.category) return false;
+    if (filters.priority && u.priority !== filters.priority) return false;
+    if (filters.dateFrom && u.date < filters.dateFrom) return false;
+    if (filters.dateTo && u.date > filters.dateTo) return false;
+    if (q) {
+      const haystack = (u.title + " " + u.summary + " " + u.department + " " + u.category).toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  }).sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+// ---------------------------------------------------------------------------
+// Rendering: summary cards
+// ---------------------------------------------------------------------------
+function renderCards() {
+  const today = todayStr();
+  const totalToday = ALL_UPDATES.filter(u => u.date === today).length;
+  const highPriority = ALL_UPDATES.filter(u => u.priority === "High").length;
+  const gstCount = ALL_UPDATES.filter(u => u.department === "GST").length;
+  const cbicCount = ALL_UPDATES.filter(u => u.department === "CBIC").length;
+
+  const cardDefs = [
+    { label: "Total Updates Today", value: totalToday, accent: "#1E3A5F", type: "date", filterValue: today },
+    { label: "High Priority Updates", value: highPriority, accent: "#DC2626", type: "priority", filterValue: "High" },
+    { label: "GST Updates", value: gstCount, accent: "#0F766E", type: "department", filterValue: "GST" },
+    { label: "CBIC Updates", value: cbicCount, accent: "#854D0E", type: "department", filterValue: "CBIC" },
+  ];
+
+  const allDepts = Object.keys(DEPARTMENTS);
+  function isActive(c) {
+    const allSelected = filters.departments.length === allDepts.length;
+    const noRange = !filters.dateFrom && !filters.dateTo;
+    if (c.type === "date") return filters.dateFrom === c.filterValue && filters.dateTo === c.filterValue && allSelected && !filters.category && !filters.priority;
+    if (c.type === "priority") return filters.priority === c.filterValue && allSelected && !filters.category && noRange;
+    return filters.departments.length === 1 && filters.departments[0] === c.filterValue && !filters.category && !filters.priority && noRange;
+  }
+
+  const container = document.getElementById("cards");
+  container.innerHTML = "";
+  cardDefs.forEach((c, i) => {
+    const active = isActive(c);
+    const div = document.createElement("button");
+    div.className = "card" + (active ? " active" : "");
+    div.style.setProperty("--accent", c.accent);
+    div.innerHTML = `
+      <div class="card-top">
+        <span class="card-label">${c.label}</span>
+      </div>
+      <div class="card-value">${c.value}</div>
+      <div class="card-hint" style="color:${active ? c.accent : 'var(--text-muted)'}">
+        ${active ? "Showing this filter — click to clear" : "Click to view these updates"}
+      </div>
+    `;
+    div.onclick = () => handleCardClick(c);
+    container.appendChild(div);
+  });
+}
+
+function handleCardClick(c) {
+  const isCurrentlyActive =
+    (c.type === "date" && filters.dateFrom === c.filterValue && filters.dateTo === c.filterValue) ||
+    (c.type === "priority" && filters.priority === c.filterValue) ||
+    (c.type === "department" && filters.departments.length === 1 && filters.departments[0] === c.filterValue);
+
+  if (isCurrentlyActive) {
+    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: "", dateTo: "" };
+  } else {
+    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: "", dateTo: "" };
+    if (c.type === "date") { filters.dateFrom = c.filterValue; filters.dateTo = c.filterValue; }
+    if (c.type === "priority") filters.priority = c.filterValue;
+    if (c.type === "department") filters.departments = [c.filterValue];
+  }
+  render();
+  document.getElementById("table-section").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ---------------------------------------------------------------------------
+// Rendering: department toggles + selects
+// ---------------------------------------------------------------------------
+function renderFilterControls() {
+  const toggleContainer = document.getElementById("dept-toggles");
+  toggleContainer.innerHTML = "";
+  Object.keys(DEPARTMENTS).forEach(dept => {
+    const active = filters.departments.includes(dept);
+    const color = DEPARTMENTS[dept].color;
+    const btn = document.createElement("button");
+    btn.className = "dept-toggle" + (active ? " active" : "");
+    btn.textContent = dept;
+    btn.style.background = active ? color : "white";
+    btn.style.borderColor = active ? color : "var(--border)";
+    btn.onclick = () => {
+      if (filters.departments.includes(dept)) {
+        filters.departments = filters.departments.filter(d => d !== dept);
+      } else {
+        filters.departments = [...filters.departments, dept];
+      }
+      render();
+    };
+    toggleContainer.appendChild(btn);
+  });
+
+  const catSel = document.getElementById("category-filter");
+  if (catSel.options.length === 1) {
+    CATEGORIES.forEach(c => catSel.add(new Option(c, c)));
+  }
+  catSel.value = filters.category;
+
+  const prioSel = document.getElementById("priority-filter");
+  if (prioSel.options.length === 1) {
+    PRIORITIES.forEach(p => prioSel.add(new Option(p, p)));
+  }
+  prioSel.value = filters.priority;
+
+  document.getElementById("date-from").value = filters.dateFrom;
+  document.getElementById("date-to").value = filters.dateTo;
+
+  const allSelected = filters.departments.length === Object.keys(DEPARTMENTS).length;
+  const hasActive = !allSelected || filters.category || filters.priority || filters.dateFrom || filters.dateTo;
+  document.getElementById("clear-filters").style.display = hasActive ? "inline" : "none";
+}
+
+document.getElementById("category-filter").addEventListener("change", e => { filters.category = e.target.value; render(); });
+document.getElementById("priority-filter").addEventListener("change", e => { filters.priority = e.target.value; render(); });
+document.getElementById("date-from").addEventListener("change", e => { filters.dateFrom = e.target.value; render(); });
+document.getElementById("date-to").addEventListener("change", e => { filters.dateTo = e.target.value; render(); });
+document.getElementById("clear-filters").addEventListener("click", () => {
+  filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: "", dateTo: "" };
+  render();
+});
+document.getElementById("search").addEventListener("input", e => { query = e.target.value; render(); });
+async function handleRefreshClick() {
+  // This hosted version has no live server behind it — the actual scraping
+  // happens on a schedule via GitHub Actions, not on button click. Refresh
+  // here just reloads the latest committed data.json, which the scheduled
+  // workflow updates roughly once an hour.
+  const btn = document.getElementById("refresh-btn");
+  btn.disabled = true;
+  btn.textContent = "Reloading...";
+  await loadData();
+  btn.disabled = false;
+  btn.textContent = "Refresh";
+}
+document.getElementById("refresh-btn").addEventListener("click", handleRefreshClick);
+
+// ---------------------------------------------------------------------------
+// Rendering: table
+// ---------------------------------------------------------------------------
+function deptSeal(dept) {
+  const d = DEPARTMENTS[dept] || { initials: "?", color: "#6B7280" };
+  return `<span class="dept-seal" style="background:${d.color}">${d.initials}</span>`;
+}
+function priorityBadge(priority) {
+  const s = PRIORITY_STYLES[priority] || PRIORITY_STYLES.Low;
+  return `<span class="badge" style="background:${s.bg}; color:${s.text}">
+    <span class="dot" style="background:${s.dot}"></span>${priority}
+  </span>`;
+}
+
+function renderTable() {
+  const filtered = getFilteredUpdates();
+  document.getElementById("count-label").textContent = `${filtered.length} of ${ALL_UPDATES.length} updates`;
+
+  const container = document.getElementById("table-container");
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-state">
+      <p style="font-weight:500; margin:0 0 4px;">No updates match your filters</p>
+      <p style="color:var(--text-secondary); font-size:13px; margin:0;">Try clearing a filter or adjusting your search.</p>
+    </div>`;
+    return;
+  }
+
+  const rows = filtered.map(u => `
+    <tr class="data-row">
+      <td>${fmtDate(u.date)}</td>
+      <td>${deptSeal(u.department)}${u.department}</td>
+      <td style="max-width:220px;">${u.title}</td>
+      <td style="max-width:280px; color:var(--text-secondary);">${u.summary}</td>
+      <td>${priorityBadge(u.priority)}</td>
+      <td>
+        <div class="source-row">
+          <a class="source-link" href="${u.source}" target="_blank" rel="noopener noreferrer">Source</a>
+          <button class="copy-btn" onclick="copyUrl('${u.source}', this)" title="Copy source URL">Copy</button>
+        </div>
+      </td>
+      <td><button class="view-btn" onclick="openDetail(${u.id})">View Details</button></td>
+    </tr>
+  `).join("");
+
+  container.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Department</th><th>Title</th><th>Summary</th><th>Priority</th><th>Source</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+// ---------------------------------------------------------------------------
+// Detail panel
+// ---------------------------------------------------------------------------
+function openDetail(id) {
+  const u = ALL_UPDATES.find(x => x.id === id);
+  if (!u) return;
+  const panel = document.getElementById("panel");
+  const overlay = document.getElementById("overlay");
+
+  const keyChanges = (u.keyChanges || []).map(k => `<li>${k}</li>`).join("");
+
+  panel.innerHTML = `
+    <div class="panel-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+        ${deptSeal(u.department)}
+        <span style="font-size:12px; color:var(--text-secondary);">${u.department} · ${u.category}</span>
+      </div>
+      <button class="panel-close" onclick="closeDetail()">&times;</button>
+    </div>
+    <div class="panel-body">
+      <p class="panel-title">${u.title}</p>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+        ${priorityBadge(u.priority)}
+        <span style="font-size:12px; color:var(--text-muted);">Published ${fmtDate(u.date)}</span>
+      </div>
+      <h3>Summary</h3>
+      <p>${u.summary}</p>
+      ${keyChanges ? `<h3>Key Changes</h3><ul class="key-changes">${keyChanges}</ul>` : ""}
+      <h3>Details</h3>
+      <div class="meta-grid">
+        <div class="meta-box"><p>Effective Date</p><p>${u.effectiveDate ? fmtDate(u.effectiveDate) : "—"}</p></div>
+        <div class="meta-box"><p>Published</p><p>${fmtDate(u.date)}</p></div>
+      </div>
+      <h3>Action Required</h3>
+      <div class="action-required">${u.actionRequired || "—"}</div>
+      <h3>Source</h3>
+      <div class="source-url-row">
+        <span class="source-url-text">${u.source}</span>
+        <button class="copy-btn" onclick="copyUrl('${u.source}', this)" title="Copy source URL">Copy</button>
+      </div>
+      <a class="source-btn" href="${u.source}" target="_blank" rel="noopener noreferrer">View Original Source ↗</a>
+    </div>
+  `;
+  panel.classList.add("open");
+  overlay.style.display = "block";
+}
+function closeDetail() {
+  document.getElementById("panel").classList.remove("open");
+  document.getElementById("overlay").style.display = "none";
+}
+
+// ---------------------------------------------------------------------------
+// Copy-to-clipboard for source URLs (works in the table and the detail panel)
+// ---------------------------------------------------------------------------
+function copyUrl(url, btnEl) {
+  const showCopied = () => {
+    const original = btnEl.textContent;
+    btnEl.textContent = "Copied!";
+    btnEl.classList.add("copied");
+    setTimeout(() => { btnEl.textContent = original; btnEl.classList.remove("copied"); }, 1500);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(url).then(showCopied).catch(() => fallbackCopy(url, showCopied));
+  } else {
+    fallbackCopy(url, showCopied);
+  }
+}
+function fallbackCopy(url, onDone) {
+  // Fallback for browsers/contexts where navigator.clipboard isn't available
+  // (e.g. non-HTTPS/non-localhost origins).
+  const textarea = document.createElement("textarea");
+  textarea.value = url;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  try { document.execCommand("copy"); onDone(); } catch (e) { console.warn("Copy failed:", e); }
+  document.body.removeChild(textarea);
+}
+document.getElementById("overlay").addEventListener("click", closeDetail);
+
+// ---------------------------------------------------------------------------
+// Render everything + boot
+// ---------------------------------------------------------------------------
+function render() {
+  renderCards();
+  renderFilterControls();
+  renderTable();
+}
+
+loadData();
+</script>
+</body>
+</html>
