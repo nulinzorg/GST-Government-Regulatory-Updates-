@@ -101,7 +101,13 @@ def scrape_cbic():
                     continue
                 title_text = a.get_text().strip()
                 href = a["href"]
-                if "/pdf/" not in href.lower():
+                # BUG FOUND via live debug output: real hrefs are relative
+                # paths like "pdf/Circular-No-250-2025.pdf" — no leading
+                # slash before "pdf". The old check for "/pdf/" as a
+                # substring never matched these, silently rejecting every
+                # real item. Checking the file extension instead is far
+                # more reliable regardless of relative/absolute path style.
+                if not href.lower().endswith(".pdf"):
                     rejected_pdf += 1
                     if len(sample_rejected_hrefs) < 5:
                         sample_rejected_hrefs.append(href)
@@ -123,7 +129,9 @@ def scrape_cbic():
                 for h in sample_rejected_hrefs:
                     print(f"    {h!r}")
 
-    ticker_links = soup.find_all("a", href=re.compile(r"/pdf/", re.IGNORECASE))
+    # Same fix as above — match the .pdf extension, not a "/pdf/" path
+    # segment that assumes a leading slash relative links don't have.
+    ticker_links = soup.find_all("a", href=re.compile(r"\.pdf$", re.IGNORECASE))
     print(f"  [debug] total <a href*=/pdf/> tags on page: {len(ticker_links)}")
     ticker_added = 0
     for a in ticker_links:
@@ -193,17 +201,20 @@ def scrape_gstn_advisories():
         if len(links) == 0:
             # The page rendered real content but our selector guess didn't
             # match — dump a sample of what's actually there instead of
-            # guessing blindly again.
+            # guessing blindly again. Scanning ALL links (not just the
+            # first several), since the first batch turned out to be
+            # header/nav links (Login, Register, Home) — the real advisory
+            # list items are further down the page.
             all_links = driver.find_elements(By.TAG_NAME, "a")
             print(f"  [debug] total <a> tags on page: {len(all_links)}")
             sample_hrefs = []
-            for link in all_links[:40]:
+            for link in all_links:
                 href = link.get_attribute("href")
                 text = link.text.strip()
-                if href and text:
-                    sample_hrefs.append(f"{text[:40]!r} -> {href}")
-            print(f"  [debug] sample of {len(sample_hrefs)} links with visible text:")
-            for s in sample_hrefs[:15]:
+                if href and text and len(text) > 15:  # skip short nav labels, keep real-looking titles
+                    sample_hrefs.append(f"{text[:70]!r} -> {href}")
+            print(f"  [debug] {len(sample_hrefs)} links with longer text (likely real content, not nav):")
+            for s in sample_hrefs[:25]:
                 print(f"    {s}")
         for link in links:
             title = link.text.strip()
