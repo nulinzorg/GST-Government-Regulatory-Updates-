@@ -1,6 +1,13 @@
 requests>=2.31.0
 beautifulsoup4>=4.12.0
+selenium>=4.20.0
 
 # Email uses only Python's built-in smtplib/email modules — no extra
 # package needed. Sends via Brevo's free SMTP relay (300/day, no card,
 # no 2-Step Verification) instead of Gmail.
+#
+# selenium is needed for the GSTN Advisory & Releases scraper
+# (services.gst.gov.in), since that page is a JavaScript app — a plain
+# HTTP request can't read it. The GitHub Actions workflow installs a
+# matching Chrome browser automatically; nothing to install locally
+# unless you also want to run this script on your own machine.
