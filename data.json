@@ -17,23 +17,6 @@
     "actionRequired": "Taxpayers needing ACES-GST services (Central Excise, Service Tax, HSNS, SBS, SVLDRS) should plan filings outside the maintenance window."
   },
   {
-    "id": 2,
-    "date": "2026-07-02",
-    "department": "NIC e-Way Bill",
-    "category": "FAQ",
-    "title": "GSTN FAQs on Voluntary Closure of e-Way Bill",
-    "summary": "GSTN published a detailed FAQ document clarifying the Voluntary e-Way Bill Closure facility: closure is optional, can be done on the date of delivery or the immediately succeeding day, and remains available up to one day after the EWB's validity expires.",
-    "priority": "Medium",
-    "source": "https://tutorial.gst.gov.in/downloads/news/faqs_on_voluntary_closure_of_e_way_bill_approved.pdf",
-    "keyChanges": [
-      "Confirms EWB closure is voluntary, not mandatory",
-      "Closure allowed on the date of delivery or the immediately succeeding day",
-      "Closure functionality stays available up to one day after EWB validity expiry"
-    ],
-    "effectiveDate": "2026-08-01",
-    "actionRequired": "Review the FAQ document and align internal delivery-confirmation processes before the 1 August 2026 go-live."
-  },
-  {
     "id": 3,
     "date": "2026-07-02",
     "department": "NIC e-Invoice",
