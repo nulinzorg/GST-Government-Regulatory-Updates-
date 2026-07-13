@@ -17,23 +17,6 @@
     "actionRequired": "e-Invoice API integrators and IRPs should test the Generate IRN + e-Way Bill flow against the updated schema before 1 August 2026."
   },
   {
-    "id": 4,
-    "date": "2026-07-01",
-    "department": "PIB",
-    "category": "Press Release",
-    "title": "Gross GST collections for June 2026 rise 13.9% to ₹1,94,812 crore",
-    "summary": "Provisional data published on the GST portal shows gross GST revenue for June 2026 grew 13.9% year-on-year, led by a 34.6% surge in import-related GST. Net revenue after refunds rose 11.2% to ₹1,62,377 crore.",
-    "priority": "Low",
-    "source": "https://tutorial.gst.gov.in/downloads/news/for_publishing_monthly_gst_revenue_june_2026.pdf",
-    "keyChanges": [
-      "Gross GST collection: ₹1,94,812 crore, up 13.9% YoY",
-      "Import-led growth: import GST up 34.6% versus 6.5% domestic growth",
-      "Refunds up 29.1% to ₹32,436 crore; net revenue ₹1,62,377 crore"
-    ],
-    "effectiveDate": "2026-07-01",
-    "actionRequired": "Informational only — useful context for revenue and compliance trend analysis."
-  },
-  {
     "id": 5,
     "date": "2026-06-30",
     "department": "GST",
