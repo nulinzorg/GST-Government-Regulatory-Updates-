@@ -94,6 +94,7 @@ def scrape_cbic():
         print(f"  [debug] <ul> found after heading: {ul is not None}, <li> count: {len(ul.find_all('li')) if ul else 0}")
         if ul:
             rejected_pdf = rejected_words = rejected_junk = 0
+            sample_rejected_hrefs = []
             for li in ul.find_all("li"):
                 a = li.find("a")
                 if not a or not a.get("href"):
@@ -102,6 +103,8 @@ def scrape_cbic():
                 href = a["href"]
                 if "/pdf/" not in href.lower():
                     rejected_pdf += 1
+                    if len(sample_rejected_hrefs) < 5:
+                        sample_rejected_hrefs.append(href)
                     continue
                 if len(title_text.split()) < 3:
                     rejected_words += 1
@@ -115,6 +118,10 @@ def scrape_cbic():
                     item_date=None, needs_review=True,
                 ))
             print(f"  [debug] What's New: {len(items)} accepted, rejected: {rejected_pdf} (no /pdf/), {rejected_words} (too few words), {rejected_junk} (english/hindi)")
+            if sample_rejected_hrefs:
+                print(f"  [debug] sample of actual href values that were rejected (to see what the page really served):")
+                for h in sample_rejected_hrefs:
+                    print(f"    {h!r}")
 
     ticker_links = soup.find_all("a", href=re.compile(r"/pdf/", re.IGNORECASE))
     print(f"  [debug] total <a href*=/pdf/> tags on page: {len(ticker_links)}")
@@ -183,6 +190,21 @@ def scrape_gstn_advisories():
         # path, not necessarily direct .pdf links on the listing page itself.
         links = driver.find_elements(By.CSS_SELECTOR, "a[href*='/read/']")
         print(f"  [debug] links matching '/read/' found: {len(links)}")
+        if len(links) == 0:
+            # The page rendered real content but our selector guess didn't
+            # match — dump a sample of what's actually there instead of
+            # guessing blindly again.
+            all_links = driver.find_elements(By.TAG_NAME, "a")
+            print(f"  [debug] total <a> tags on page: {len(all_links)}")
+            sample_hrefs = []
+            for link in all_links[:40]:
+                href = link.get_attribute("href")
+                text = link.text.strip()
+                if href and text:
+                    sample_hrefs.append(f"{text[:40]!r} -> {href}")
+            print(f"  [debug] sample of {len(sample_hrefs)} links with visible text:")
+            for s in sample_hrefs[:15]:
+                print(f"    {s}")
         for link in links:
             title = link.text.strip()
             href = link.get_attribute("href")
