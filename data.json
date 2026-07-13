@@ -1,22 +1,5 @@
 [
   {
-    "id": 1,
-    "date": "2026-07-09",
-    "department": "CBIC",
-    "category": "Order",
-    "title": "Scheduled maintenance on ACES-GST application, 11 July 2026",
-    "summary": "CBIC's Directorate General of Systems has scheduled a maintenance window on the ACES-GST application from 18:00 to 23:00 hrs on 11 July 2026. Services related to Central Excise, Service Tax, HSNS, SBS and SVLDRS will be unavailable during this period.",
-    "priority": "Medium",
-    "source": "https://cbic-gst.gov.in/",
-    "keyChanges": [
-      "Maintenance window fixed for 18:00–23:00 hrs on 11 July 2026",
-      "Central Excise, Service Tax, HSNS, SBS and SVLDRS services affected",
-      "GST return filing on the main GST portal is not affected"
-    ],
-    "effectiveDate": "2026-07-11",
-    "actionRequired": "Taxpayers needing ACES-GST services (Central Excise, Service Tax, HSNS, SBS, SVLDRS) should plan filings outside the maintenance window."
-  },
-  {
     "id": 3,
     "date": "2026-07-02",
     "department": "NIC e-Invoice",
