@@ -222,6 +222,24 @@ def scrape_gstn_advisories():
             print(f"  [debug] {len(sample_hrefs)} links with longer text (likely real content, not nav):")
             for s in sample_hrefs[:25]:
                 print(f"    {s}")
+
+            # The identical output across two different navigation attempts
+            # suggests the advisory list items may not be <a> tags at all —
+            # a common Angular pattern is clickable table rows with JS click
+            # handlers, not real hyperlinks. Search broadly for elements
+            # containing date-like text (e.g. "Jul 2nd, 2026", matching the
+            # format seen on an individual advisory's detail page) to find
+            # the real list container, regardless of what tag it uses.
+            date_pattern_elements = driver.find_elements(
+                By.XPATH,
+                "//*[contains(text(), '2026') or contains(text(), '2025')]"
+            )
+            print(f"  [debug] elements containing '2025'/'2026' text: {len(date_pattern_elements)}")
+            for el in date_pattern_elements[:15]:
+                tag = el.tag_name
+                cls = el.get_attribute("class") or ""
+                text = el.text.strip()[:80]
+                print(f"    <{tag} class={cls!r}> {text!r}")
         for link in links:
             title = link.text.strip()
             href = link.get_attribute("href")
