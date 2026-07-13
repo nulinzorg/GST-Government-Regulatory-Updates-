@@ -75,7 +75,7 @@
   main { padding: 20px 0 60px; }
 
   .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
-  @media (min-width: 800px) { .cards { grid-template-columns: repeat(4, 1fr); } }
+  @media (min-width: 800px) { .cards { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
   .card {
     background: var(--card); border: 1px solid var(--border); border-radius: 12px;
     padding: 16px; text-align: left; transition: box-shadow .15s;
@@ -136,7 +136,8 @@
   .empty-state { text-align: center; padding: 40px 20px; background: white; border: 1px solid var(--border); border-radius: 12px; }
 
   #overlay {
-display: none; position: fixed; inset: 0; background: transparent; z-index: 50;
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 50;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   }
   #panel {
     position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 460px;
@@ -252,6 +253,7 @@ const DEPARTMENTS = {
   "NIC e-Way Bill": { initials: "EWB", color: "#3730A3" },
   "NIC e-Invoice": { initials: "INV", color: "#6D28D9" },
   "PIB": { initials: "PIB", color: "#854D0E" },
+  "GSTN": { initials: "GSTN", color: "#0369A1" },
 };
 const CATEGORIES = ["Notification", "Circular", "Order", "Press Release", "FAQ", "Amendment"];
 const PRIORITIES = ["High", "Medium", "Low"];
@@ -467,12 +469,18 @@ function renderCards() {
   const highPriority = ALL_UPDATES.filter(u => u.priority === "High").length;
   const gstCount = ALL_UPDATES.filter(u => u.department === "GST").length;
   const cbicCount = ALL_UPDATES.filter(u => u.department === "CBIC").length;
+  const circularCount = ALL_UPDATES.filter(u => u.category === "Circular").length;
+  const notificationCount = ALL_UPDATES.filter(u => u.category === "Notification").length;
+  const highAlertCount = ALL_UPDATES.filter(u => u.category === "Notification" && u.priority === "High").length;
 
   const cardDefs = [
     { label: "Total Updates Today", value: totalToday, accent: "#1E3A5F", type: "date", filterValue: today },
     { label: "High Priority Updates", value: highPriority, accent: "#DC2626", type: "priority", filterValue: "High" },
     { label: "GST Updates", value: gstCount, accent: "#0F766E", type: "department", filterValue: "GST" },
     { label: "CBIC Updates", value: cbicCount, accent: "#854D0E", type: "department", filterValue: "CBIC" },
+    { label: "Circulars", value: circularCount, accent: "#3730A3", type: "category", filterValue: "Circular" },
+    { label: "Notifications", value: notificationCount, accent: "#6D28D9", type: "category", filterValue: "Notification" },
+    { label: "High Alert Notifications", value: highAlertCount, accent: "#B91C1C", type: "compound", filterValue: { category: "Notification", priority: "High" } },
   ];
 
   const allDepts = Object.keys(DEPARTMENTS);
@@ -481,6 +489,8 @@ function renderCards() {
     const noRange = !filters.dateFrom && !filters.dateTo;
     if (c.type === "date") return filters.dateFrom === c.filterValue && filters.dateTo === c.filterValue && allSelected && !filters.category && !filters.priority;
     if (c.type === "priority") return filters.priority === c.filterValue && allSelected && !filters.category && noRange;
+    if (c.type === "category") return filters.category === c.filterValue && allSelected && !filters.priority && noRange;
+    if (c.type === "compound") return filters.category === c.filterValue.category && filters.priority === c.filterValue.priority && allSelected && noRange;
     return filters.departments.length === 1 && filters.departments[0] === c.filterValue && !filters.category && !filters.priority && noRange;
   }
 
@@ -509,6 +519,8 @@ function handleCardClick(c) {
   const isCurrentlyActive =
     (c.type === "date" && filters.dateFrom === c.filterValue && filters.dateTo === c.filterValue) ||
     (c.type === "priority" && filters.priority === c.filterValue) ||
+    (c.type === "category" && filters.category === c.filterValue) ||
+    (c.type === "compound" && filters.category === c.filterValue.category && filters.priority === c.filterValue.priority) ||
     (c.type === "department" && filters.departments.length === 1 && filters.departments[0] === c.filterValue);
 
   if (isCurrentlyActive) {
@@ -517,6 +529,8 @@ function handleCardClick(c) {
     filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: "", dateTo: "" };
     if (c.type === "date") { filters.dateFrom = c.filterValue; filters.dateTo = c.filterValue; }
     if (c.type === "priority") filters.priority = c.filterValue;
+    if (c.type === "category") filters.category = c.filterValue;
+    if (c.type === "compound") { filters.category = c.filterValue.category; filters.priority = c.filterValue.priority; }
     if (c.type === "department") filters.departments = [c.filterValue];
   }
   render();
