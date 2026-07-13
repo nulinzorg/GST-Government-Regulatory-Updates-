@@ -39,4 +39,11 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add data.json
           git diff --cached --quiet || git commit -m "Update GST/CBIC data ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
-          git push
+          # Pull-rebase before pushing, with a couple of retries — handles
+          # the case where a manually-triggered run and the scheduled hourly
+          # run happen to overlap and both try to push around the same time.
+          for i in 1 2 3; do
+            git pull --rebase && git push && break
+            echo "Push attempt $i failed, retrying..."
+            sleep 5
+          done
