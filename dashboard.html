@@ -74,17 +74,17 @@
 
   main { padding: 20px 0 60px; }
 
-  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
-  @media (min-width: 800px) { .cards { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (min-width: 800px) { .cards { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } }
   .card {
     background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-    padding: 16px; text-align: left; transition: box-shadow .15s;
+    padding: 14px; text-align: left; transition: box-shadow .15s;
   }
   .card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
   .card.active { box-shadow: 0 0 0 1px var(--accent); border-color: var(--accent); }
   .card-top { display: flex; justify-content: space-between; align-items: center; }
   .card-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
-  .card-value { font-size: 26px; font-weight: 600; margin: 10px 0 2px; }
+  .card-value { font-size: 22px; font-weight: 600; margin: 8px 0 2px; }
   .card-hint { font-size: 11px; color: var(--text-muted); }
   .card-hint.active-hint { font-weight: 500; }
 
@@ -408,7 +408,18 @@ const SEED_UPDATES = [
 // State
 // ---------------------------------------------------------------------------
 let ALL_UPDATES = [];
-let filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: "", dateTo: "" };
+// Default the dashboard to "last 6 months" on load — a simple rolling
+// window with no calendar-boundary edge cases to worry about (unlike a
+// fixed financial-year-start date, this needs no special handling when
+// a new year or FY begins; it just always means "6 months back from
+// whatever today happens to be").
+function sixMonthsAgoStr() {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 6);
+  return d.toISOString().slice(0, 10);
+}
+
+let filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sixMonthsAgoStr(), dateTo: todayStr() };
 let query = "";
 
 function todayStr() {
