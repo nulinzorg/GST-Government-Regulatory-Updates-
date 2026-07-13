@@ -145,6 +145,12 @@
     position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 460px;
     background: white; box-shadow: -8px 0 24px rgba(0,0,0,0.1); overflow-y: auto;
     transform: translateX(100%); transition: transform .25s ease-out;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    /* BUG FIX: the panel had no z-index, so the overlay's z-index:50 was
+       stacking above it — meaning the overlay's backdrop-filter blur (meant
+       only for the dashboard behind it) was blurring the panel itself.
+       Confirmed via objective sharpness measurement on a screen recording. */
+    z-index: 51;
   }
   #panel.open { transform: translateX(0); }
   .panel-header {
