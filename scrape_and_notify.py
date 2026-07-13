@@ -29,6 +29,7 @@ import re
 import smtplib
 import time
 from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 from email.mime.text import MIMEText
 from pathlib import Path
 from urllib.parse import urljoin
@@ -171,89 +172,104 @@ def scrape_cbic():
 #   3. Call scrape_gstn_advisories() from main() below
 # It's deliberately NOT wired in yet, so it can't break the reliable CBIC
 # scrape that's already running hourly.
-# ---------------------------------------------------------------------------
-def scrape_gstn_advisories():
-    from selenium import webdriver
+def scrape_gstn_advisories(driver):
     from selenium.webdriver.common.by import By
+
+    items = []
+    # Direct-loading the deep advisory URL was landing on the site's
+    # generic homepage/shell instead of the actual advisory list —
+    # confirmed via debug output (we found a nav link *to* this exact
+    # URL sitting in the results, meaning we never actually left the
+    # homepage). Angular-style apps sometimes don't correctly
+    # initialize a deep route on a fresh page load. Loading the
+    # homepage first and clicking through like a real visitor is more
+    # reliable for this kind of app.
+    driver.get("https://services.gst.gov.in/")
+    time.sleep(6)
+    nav_link = driver.find_element(By.XPATH, "//a[contains(@href, 'advisoryandreleases')]")
+    nav_link.click()
+    time.sleep(8)
+    page_title = driver.title
+    body_text_length = len(driver.find_element(By.TAG_NAME, "body").text)
+    print(f"  [debug] page title: {page_title!r}, body text length: {body_text_length} chars")
+    # Confirmed real structure via debug output: advisory titles live in
+    # an <h3> with a class containing "news-item" and "header" (the
+    # exact class name showed a double hyphen — "news-item--header" —
+    # in one debug dump; using contains() here instead of an exact match
+    # so a minor naming variation like that doesn't silently break this
+    # again), dates in a nearby <p> with "news-item" and "date" in its
+    # class. There is NO <a href> anywhere in this list — confirmed via
+    # debug output — so we click each item to capture its real URL.
+    headers = driver.find_elements(
+        By.XPATH,
+        "//h3[contains(@class, 'news-item') and contains(@class, 'header')]"
+    )
+    print(f"  [debug] news-item header elements found: {len(headers)}")
+
+    MAX_ITEMS = 15  # cap to keep run time reasonable
+    for i in range(min(len(headers), MAX_ITEMS)):
+        try:
+            # Re-find each time — clicking/navigating invalidates old
+            # element references (StaleElementReferenceException).
+            headers = driver.find_elements(
+                By.XPATH,
+                "//h3[contains(@class, 'news-item') and contains(@class, 'header')]"
+            )
+            header_el = headers[i]
+            title = header_el.text.strip()
+            if not title or len(title.split()) < 3:
+                continue
+
+            # Click the header itself (or its nearest clickable ancestor)
+            clickable = header_el
+            try:
+                clickable.click()
+            except Exception:
+                # Some Angular Material list items need the parent
+                # container clicked instead of the text element itself.
+                parent = header_el.find_element(By.XPATH, "./..")
+                parent.click()
+
+            time.sleep(3)
+            real_url = driver.current_url
+            if "advisoryandreleases" in real_url and real_url != GSTN_ADVISORY_URL:
+                items.append(to_regulatory_update(
+                    title=title, href=real_url, dept="GSTN", category="Notification",
+                    priority="Medium", item_date=None, needs_review=True,
+                ))
+            driver.back()
+            time.sleep(3)
+        except Exception as exc:  # noqa: BLE001 — one bad item shouldn't stop the rest
+            print(f"  [debug] item {i} failed: {exc}")
+            continue
+
+    print(f"  [debug] items captured with real URLs: {len(items)}")
+    return items
+
+
+def create_driver():
+    from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
 
     options = Options()
     options.add_argument("--headless=new")
-    driver = webdriver.Chrome(options=options)
-    items = []
+    options.add_argument("--window-size=1024,700")
+    return webdriver.Chrome(options=options)
+
+
+def capture_screenshot(driver, url):
+    """Navigates to url and returns a PNG screenshot as bytes, or None on
+    failure. Used to embed a real preview of each new item's source page
+    in the email digest. A failure here (e.g. a PDF that doesn't render,
+    a slow page) should never break the rest of the run — caller treats
+    None as "no screenshot for this one", not an error."""
     try:
-        # Direct-loading the deep advisory URL was landing on the site's
-        # generic homepage/shell instead of the actual advisory list —
-        # confirmed via debug output (we found a nav link *to* this exact
-        # URL sitting in the results, meaning we never actually left the
-        # homepage). Angular-style apps sometimes don't correctly
-        # initialize a deep route on a fresh page load. Loading the
-        # homepage first and clicking through like a real visitor is more
-        # reliable for this kind of app.
-        driver.get("https://services.gst.gov.in/")
-        time.sleep(6)
-        nav_link = driver.find_element(By.XPATH, "//a[contains(@href, 'advisoryandreleases')]")
-        nav_link.click()
-        time.sleep(8)
-        page_title = driver.title
-        body_text_length = len(driver.find_element(By.TAG_NAME, "body").text)
-        print(f"  [debug] page title: {page_title!r}, body text length: {body_text_length} chars")
-        # Confirmed real structure via debug output: advisory titles live in
-        # Confirmed real structure via debug output: advisory titles live in
-        # an <h3> with a class containing "news-item" and "header" (the
-        # exact class name showed a double hyphen — "news-item--header" —
-        # in one debug dump; using contains() here instead of an exact match
-        # so a minor naming variation like that doesn't silently break this
-        # again), dates in a nearby <p> with "news-item" and "date" in its
-        # class. There is NO <a href> anywhere in this list — confirmed via
-        # debug output — so we click each item to capture its real URL.
-        headers = driver.find_elements(
-            By.XPATH,
-            "//h3[contains(@class, 'news-item') and contains(@class, 'header')]"
-        )
-        print(f"  [debug] news-item header elements found: {len(headers)}")
-
-        MAX_ITEMS = 15  # cap to keep run time reasonable
-        for i in range(min(len(headers), MAX_ITEMS)):
-            try:
-                # Re-find each time — clicking/navigating invalidates old
-                # element references (StaleElementReferenceException).
-                headers = driver.find_elements(
-                    By.XPATH,
-                    "//h3[contains(@class, 'news-item') and contains(@class, 'header')]"
-                )
-                header_el = headers[i]
-                title = header_el.text.strip()
-                if not title or len(title.split()) < 3:
-                    continue
-
-                # Click the header itself (or its nearest clickable ancestor)
-                clickable = header_el
-                try:
-                    clickable.click()
-                except Exception:
-                    # Some Angular Material list items need the parent
-                    # container clicked instead of the text element itself.
-                    parent = header_el.find_element(By.XPATH, "./..")
-                    parent.click()
-
-                time.sleep(3)
-                real_url = driver.current_url
-                if "advisoryandreleases" in real_url and real_url != GSTN_ADVISORY_URL:
-                    items.append(to_regulatory_update(
-                        title=title, href=real_url, dept="GSTN", category="Notification",
-                        priority="Medium", item_date=None, needs_review=True,
-                    ))
-                driver.back()
-                time.sleep(3)
-            except Exception as exc:  # noqa: BLE001 — one bad item shouldn't stop the rest
-                print(f"  [debug] item {i} failed: {exc}")
-                continue
-
-        print(f"  [debug] items captured with real URLs: {len(items)}")
-    finally:
-        driver.quit()
-    return items
+        driver.get(url)
+        time.sleep(3)
+        return driver.get_screenshot_as_png()
+    except Exception as exc:  # noqa: BLE001 — best-effort; missing a screenshot is fine
+        print(f"  [debug] screenshot failed for {url}: {exc}")
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -285,7 +301,17 @@ def load_subscribers():
 # Email via Brevo SMTP — no 2-Step Verification, no App Password, just an
 # SMTP key generated from the Brevo dashboard.
 # ---------------------------------------------------------------------------
-def format_digest(new_items):
+DEPT_COLORS = {
+    "GST": "#1E3A5F", "CBIC": "#0F766E", "NIC e-Way Bill": "#3730A3",
+    "NIC e-Invoice": "#6D28D9", "PIB": "#854D0E", "GSTN": "#0369A1",
+}
+PRIORITY_COLORS = {
+    "High": ("#FEF2F2", "#B91C1C"), "Medium": ("#FFFBEB", "#B45309"), "Low": ("#F0FDF4", "#15803D"),
+}
+
+
+def format_digest_text(new_items):
+    """Plain-text fallback for mail clients that don't render HTML."""
     lines = [f"{len(new_items)} new GST/CBIC update(s) found:\n"]
     for item in new_items:
         lines.append(f"- [{item['department']}] {item['title']}")
@@ -295,7 +321,51 @@ def format_digest(new_items):
     return "\n".join(lines)
 
 
-def send_email_alert(new_items):
+def format_digest_html(new_items, screenshots):
+    """Styled HTML version, matching the dashboard's own colors. For each
+    item with a captured screenshot, embeds it inline via a cid: reference
+    — the actual image bytes are attached separately in send_email_alert()."""
+    cards = []
+    for i, item in enumerate(new_items):
+        dept_color = DEPT_COLORS.get(item["department"], "#6B7280")
+        bg, text_color = PRIORITY_COLORS.get(item["priority"], ("#F0FDF4", "#15803D"))
+        cid = f"screenshot{i}"
+        has_screenshot = item["source"] in screenshots
+        screenshot_html = (
+            f'<img src="cid:{cid}" alt="Preview of source page" '
+            f'style="width:100%;max-width:520px;border:1px solid #E5E7EB;border-radius:8px;margin-top:10px;display:block;">'
+            if has_screenshot else ""
+        )
+        cards.append(f"""
+        <div style="background:#F7F8FA;border-radius:12px;padding:16px;margin-bottom:14px;">
+          <div style="display:inline-block;background:{dept_color};color:#fff;font-size:11px;font-weight:600;
+                      padding:3px 10px;border-radius:999px;margin-bottom:8px;">{item['department']}</div>
+          <div style="display:inline-block;background:{bg};color:{text_color};font-size:11px;font-weight:600;
+                      padding:3px 10px;border-radius:999px;margin-bottom:8px;margin-left:6px;">{item['priority']} priority</div>
+          <div style="font-size:15px;font-weight:600;color:#111827;margin:6px 0;">{item['title']}</div>
+          <div style="font-size:12px;color:#6B7280;margin-bottom:6px;">Date: {item['date']}</div>
+          <a href="{item['source']}" style="font-size:12px;color:{dept_color};font-weight:600;text-decoration:none;">View original source &rarr;</a>
+          {screenshot_html}
+        </div>""")
+
+    return f"""
+    <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;">
+      <div style="background:#1E3A5F;color:#fff;padding:20px;border-radius:12px 12px 0 0;">
+        <div style="font-size:17px;font-weight:700;">GST Regulatory Dashboard</div>
+        <div style="font-size:13px;color:#CADCFC;">{len(new_items)} new update(s) found</div>
+      </div>
+      <div style="border:1px solid #E5E7EB;border-top:none;padding:20px;border-radius:0 0 12px 12px;">
+        {''.join(cards)}
+        <div style="font-size:11px;color:#9CA3AF;text-align:center;margin-top:8px;">
+          Sent automatically by the GST Regulatory Dashboard (GitHub Actions)
+        </div>
+      </div>
+    </div>
+    """
+
+
+def send_email_alert(new_items, screenshots=None):
+    screenshots = screenshots or {}
     if not new_items:
         print("No new items — skipping email.")
         return
@@ -312,17 +382,35 @@ def send_email_alert(new_items):
         print("No subscribers in subscribers.json — skipping email.")
         return
 
-    msg = MIMEMultipart()
-    msg["From"] = sender
-    msg["Subject"] = f"GST Dashboard: {len(new_items)} new update(s)"
-    msg.attach(MIMEText(format_digest(new_items), "plain"))
+    text_body = format_digest_text(new_items)
+    html_body = format_digest_html(new_items, screenshots)
+    subject = f"GST Dashboard: {len(new_items)} new update(s)"
 
     try:
         with smtplib.SMTP("smtp-relay.brevo.com", 587) as server:
             server.starttls()
             server.login(login, key)
             for recipient in recipients:
+                # A fresh MIMEMultipart per recipient — same pattern as
+                # before — so no subscriber ever sees another's address.
+                msg = MIMEMultipart("related")
+                msg["From"] = sender
                 msg["To"] = recipient
+                msg["Subject"] = subject
+
+                alt = MIMEMultipart("alternative")
+                alt.attach(MIMEText(text_body, "plain"))
+                alt.attach(MIMEText(html_body, "html"))
+                msg.attach(alt)
+
+                for i, item in enumerate(new_items):
+                    png_bytes = screenshots.get(item["source"])
+                    if png_bytes:
+                        img = MIMEImage(png_bytes)
+                        img.add_header("Content-ID", f"<screenshot{i}>")
+                        img.add_header("Content-Disposition", "inline", filename=f"screenshot{i}.png")
+                        msg.attach(img)
+
                 server.sendmail(sender, recipient, msg.as_string())
         print(f"Emailed {len(recipients)} subscriber(s).")
     except Exception as exc:  # noqa: BLE001 — a failed email should never fail the whole scrape
@@ -333,18 +421,22 @@ def send_email_alert(new_items):
 # Main
 # ---------------------------------------------------------------------------
 def main():
-    print("=== SCRIPT VERSION: v7-fixed-undefined-links-bug ===")
+    print("=== SCRIPT VERSION: v8-html-email-with-screenshots ===")
     existing = load_existing()
     existing_sources = {u["source"] for u in existing}
 
     new_items = scrape_cbic()
     print(f"CBIC: found {len(new_items)} item(s) on the page.")
 
-    # GSTN Advisory & Releases — isolated in its own try/except so that if
-    # this JS-heavy page's scraper breaks or its selectors need tuning, it
-    # can NEVER take down the reliable CBIC scrape above.
+    # One shared Chrome instance for GSTN scraping AND for screenshotting
+    # new items afterward — avoids starting a second browser just for
+    # screenshots. Isolated in its own try/except so that if this JS-heavy
+    # page's scraper breaks, it can NEVER take down the reliable CBIC
+    # scrape above.
+    driver = None
     try:
-        gstn_items = scrape_gstn_advisories()
+        driver = create_driver()
+        gstn_items = scrape_gstn_advisories(driver)
         print(f"GSTN Advisory & Releases: found {len(gstn_items)} item(s) on the page.")
         new_items += gstn_items
     except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
@@ -355,7 +447,27 @@ def main():
     save_data(merged)
     print(f"Added {len(deduped)} new item(s). data.json now has {len(merged)} total.")
 
-    send_email_alert(deduped)
+    # Screenshot each genuinely new item's real source page, to embed in
+    # the email — capped implicitly by len(deduped), which is normally
+    # small. A failed screenshot for one item never blocks the others or
+    # the email itself (capture_screenshot returns None on failure).
+    screenshots = {}
+    if deduped:
+        try:
+            if driver is None:
+                driver = create_driver()
+            for item in deduped:
+                png = capture_screenshot(driver, item["source"])
+                if png:
+                    screenshots[item["source"]] = png
+            print(f"  [debug] screenshots captured: {len(screenshots)} of {len(deduped)} new item(s)")
+        except Exception as exc:  # noqa: BLE001 — screenshots are a bonus, never critical
+            print(f"  [debug] screenshot capture step failed: {exc}")
+
+    if driver:
+        driver.quit()
+
+    send_email_alert(deduped, screenshots)
 
 
 if __name__ == "__main__":
