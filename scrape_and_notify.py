@@ -77,6 +77,7 @@ def to_regulatory_update(title, href, dept, category, priority, item_date, needs
 def scrape_cbic():
     resp = requests.get(CBIC_HOME, headers=HEADERS, timeout=20)
     resp.raise_for_status()
+    print(f"  [debug] CBIC response: HTTP {resp.status_code}, {len(resp.text)} chars")
     soup = BeautifulSoup(resp.text, "html.parser")
     items = []
 
@@ -158,9 +159,15 @@ def scrape_gstn_advisories():
     try:
         driver.get(GSTN_ADVISORY_URL)
         driver.implicitly_wait(10)
-        # Best-effort selector guess — adjust after inspecting the live
-        # rendered page if this returns nothing.
-        links = driver.find_elements(By.CSS_SELECTOR, "a[href*='.pdf']")
+        page_title = driver.title
+        body_text_length = len(driver.find_element(By.TAG_NAME, "body").text)
+        print(f"  [debug] page title: {page_title!r}, body text length: {body_text_length} chars")
+        # Selector updated based on a confirmed real URL from this site
+        # (services.gst.gov.in/services/advisoryandreleases/read/543, found
+        # via web search) — individual advisories use a "/read/{number}"
+        # path, not necessarily direct .pdf links on the listing page itself.
+        links = driver.find_elements(By.CSS_SELECTOR, "a[href*='/read/']")
+        print(f"  [debug] links matching '/read/' found: {len(links)}")
         for link in links:
             title = link.text.strip()
             href = link.get_attribute("href")
