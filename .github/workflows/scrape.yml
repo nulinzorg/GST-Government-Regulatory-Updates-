@@ -2,11 +2,13 @@ name: Scrape GST/CBIC updates and email alerts
 
 on:
   schedule:
+    # Runs every hour, on the hour (UTC). GitHub's scheduler can lag a few
+    # minutes at busy times — that's fine for this use case.
     - cron: "0 * * * *"
-  workflow_dispatch: {}
+  workflow_dispatch: {} # lets you trigger a run manually from the Actions tab, any time
 
 permissions:
-  contents: write
+  contents: write # needed so the workflow can commit the updated data.json
 
 jobs:
   scrape:
@@ -20,6 +22,9 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Set up Chrome (needed for the GSTN Advisory scraper)
+        uses: browser-actions/setup-chrome@v1
 
       - name: Scrape and notify
         env:
