@@ -40,6 +40,7 @@ DATA_FILE = ROOT / "data.json"
 SUBSCRIBERS_FILE = ROOT / "subscribers.json"
 
 CBIC_HOME = "https://cbic-gst.gov.in/"
+GSTN_ADVISORY_URL = "https://services.gst.gov.in/services/advisory/advisoryandreleases"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; GSTDashboardBot/1.0; internal, non-commercial use)"}
 ADVISORY_DATE_RE = re.compile(r"dated\s+(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})", re.IGNORECASE)
 
@@ -120,6 +121,57 @@ def scrape_cbic():
             item_date=parse_dd_mm_yyyy(date_match), needs_review=date_match is None,
         ))
 
+    return items
+
+
+# ---------------------------------------------------------------------------
+# GSTN Advisory & Releases (services.gst.gov.in) — OPTIONAL, NOT run by
+# default. This page is a JavaScript app (a plain requests.get() to it
+# returns essentially no content — confirmed directly), so reading it for
+# real needs a headless browser, unlike the CBIC scraper above.
+#
+# This has NOT been tested against the live rendered page — this
+# environment can't render JS-heavy pages either. The selector below is a
+# best-effort guess based on the known page structure of similar GSTN
+# advisory listings, not something confirmed against this specific page's
+# real DOM. Treat it as a starting point: run it once, and if it returns
+# 0 items, inspect the live page with browser devtools and adjust the
+# selector.
+#
+# To actually use this, you'd need to:
+#   1. pip install selenium (add to requirements.txt)
+#   2. Add a Chrome setup step to .github/workflows/scrape.yml
+#      (e.g. browser-actions/setup-chrome)
+#   3. Call scrape_gstn_advisories() from main() below
+# It's deliberately NOT wired in yet, so it can't break the reliable CBIC
+# scrape that's already running hourly.
+# ---------------------------------------------------------------------------
+def scrape_gstn_advisories():
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.chrome.options import Options
+
+    options = Options()
+    options.add_argument("--headless=new")
+    driver = webdriver.Chrome(options=options)
+    items = []
+    try:
+        driver.get(GSTN_ADVISORY_URL)
+        driver.implicitly_wait(10)
+        # Best-effort selector guess — adjust after inspecting the live
+        # rendered page if this returns nothing.
+        links = driver.find_elements(By.CSS_SELECTOR, "a[href*='.pdf']")
+        for link in links:
+            title = link.text.strip()
+            href = link.get_attribute("href")
+            if not title or not href or len(title.split()) < 3:
+                continue
+            items.append(to_regulatory_update(
+                title=title, href=href, dept="GSTN", category="Notification",
+                priority="Medium", item_date=None, needs_review=True,
+            ))
+    finally:
+        driver.quit()
     return items
 
 
@@ -205,6 +257,16 @@ def main():
 
     new_items = scrape_cbic()
     print(f"CBIC: found {len(new_items)} item(s) on the page.")
+
+    # GSTN Advisory & Releases — isolated in its own try/except so that if
+    # this JS-heavy page's scraper breaks or its selectors need tuning, it
+    # can NEVER take down the reliable CBIC scrape above.
+    try:
+        gstn_items = scrape_gstn_advisories()
+        print(f"GSTN Advisory & Releases: found {len(gstn_items)} item(s) on the page.")
+        new_items += gstn_items
+    except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
+        print(f"GSTN Advisory scrape failed (CBIC results above are unaffected): {exc}")
 
     deduped = [item for item in new_items if item["source"] not in existing_sources]
     merged = existing + deduped
