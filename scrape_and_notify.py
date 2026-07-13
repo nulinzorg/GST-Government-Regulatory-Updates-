@@ -27,6 +27,7 @@ import json
 import os
 import re
 import smtplib
+import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -81,37 +82,44 @@ def scrape_cbic():
     soup = BeautifulSoup(resp.text, "html.parser")
     items = []
 
-    whats_new_heading = soup.find(string=re.compile(r"^\s*What's New\s*$"))
+    # Match "What's New" regardless of straight (') vs curly (') apostrophe —
+    # confirmed via testing that an exact-match regex silently fails against
+    # a curly apostrophe, which professionally designed sites often use.
+    # \W matches any single non-word character (straight or curly apostrophe,
+    # or nothing at all) between "What" and "s New".
+    whats_new_heading = soup.find(string=re.compile(r"What\W?s\s+New", re.IGNORECASE))
+    print(f"  [debug] 'What's New' heading found: {whats_new_heading is not None}")
     if whats_new_heading:
         ul = whats_new_heading.find_parent().find_next("ul")
+        print(f"  [debug] <ul> found after heading: {ul is not None}, <li> count: {len(ul.find_all('li')) if ul else 0}")
         if ul:
+            rejected_pdf = rejected_words = rejected_junk = 0
             for li in ul.find_all("li"):
                 a = li.find("a")
                 if not a or not a.get("href"):
                     continue
                 title_text = a.get_text().strip()
                 href = a["href"]
-                # Defensive filtering: the naive "next <ul> after the heading"
-                # approach can accidentally grab an unrelated list on the page
-                # (e.g. an English/Hindi language-toggle menu, or a nav menu) if
-                # it happens to sit between the heading and the real list in the
-                # page's structure. Reject anything that doesn't look like a
-                # real notification: must link to a PDF, and the title must be
-                # more than a couple of words (a genuine notification title is
-                # never just "English" or "Hindi").
                 if "/pdf/" not in href.lower():
+                    rejected_pdf += 1
                     continue
                 if len(title_text.split()) < 3:
+                    rejected_words += 1
                     continue
                 if title_text.lower() in {"english", "hindi", "हिंदी"}:
+                    rejected_junk += 1
                     continue
                 items.append(to_regulatory_update(
                     title=title_text, href=urljoin(CBIC_HOME, href),
                     dept="CBIC", category="Notification", priority="Medium",
                     item_date=None, needs_review=True,
                 ))
+            print(f"  [debug] What's New: {len(items)} accepted, rejected: {rejected_pdf} (no /pdf/), {rejected_words} (too few words), {rejected_junk} (english/hindi)")
 
-    for a in soup.find_all("a", href=re.compile(r"/pdf/", re.IGNORECASE)):
+    ticker_links = soup.find_all("a", href=re.compile(r"/pdf/", re.IGNORECASE))
+    print(f"  [debug] total <a href*=/pdf/> tags on page: {len(ticker_links)}")
+    ticker_added = 0
+    for a in ticker_links:
         context = a.find_parent().get_text(" ", strip=True) if a.find_parent() else a.get_text()
         if not re.search(r"advisory|dated|maintenance", context, re.IGNORECASE):
             continue
@@ -121,6 +129,8 @@ def scrape_cbic():
             dept="CBIC", category="Order", priority="Medium",
             item_date=parse_dd_mm_yyyy(date_match), needs_review=date_match is None,
         ))
+        ticker_added += 1
+    print(f"  [debug] ticker section: {ticker_added} accepted")
 
     return items
 
@@ -158,7 +168,12 @@ def scrape_gstn_advisories():
     items = []
     try:
         driver.get(GSTN_ADVISORY_URL)
-        driver.implicitly_wait(10)
+        # implicitly_wait only affects find_element's retry timeout — it does
+        # NOT force a real pause for a JavaScript app to finish rendering.
+        # Confirmed via debug output: body text was only 4 chars, meaning we
+        # checked before Angular had actually rendered anything. This is a
+        # real, forced pause instead.
+        time.sleep(8)
         page_title = driver.title
         body_text_length = len(driver.find_element(By.TAG_NAME, "body").text)
         print(f"  [debug] page title: {page_title!r}, body text length: {body_text_length} chars")
