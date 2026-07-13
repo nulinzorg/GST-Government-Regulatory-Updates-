@@ -422,6 +422,30 @@ def send_email_alert(new_items, screenshots=None):
 # ---------------------------------------------------------------------------
 def main():
     print("=== SCRIPT VERSION: v8-html-email-with-screenshots ===")
+
+    # Dedicated test mode — sends one fake item straight to send_email_alert(),
+    # completely bypassing scraping. This is the reliable way to test the
+    # actual email path, since "delete an entry and hope the scraper
+    # rediscovers it" only works for entries still within CBIC/GSTN's
+    # current live listing — older entries won't come back that way.
+    if os.environ.get("TEST_EMAIL_MODE") == "1":
+        print("=== TEST EMAIL MODE — sending one fake item, no real scraping ===")
+        fake_item = {
+            "department": "GSTN",
+            "category": "Notification",
+            "title": "TEST — this is a test email, not a real update",
+            "summary": "TEST — this is a test email, not a real update",
+            "priority": "Medium",
+            "source": "https://services.gst.gov.in/services/advisory/advisoryandreleases",
+            "keyChanges": [],
+            "effectiveDate": None,
+            "actionRequired": "This is a test — no action needed.",
+            "date": "2026-07-13",
+            "_needsReview": False,
+        }
+        send_email_alert([fake_item], {})
+        return
+
     existing = load_existing()
     existing_sources = {u["source"] for u in existing}
 
