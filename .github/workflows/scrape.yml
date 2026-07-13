@@ -5,7 +5,12 @@ on:
     # Runs every hour, on the hour (UTC). GitHub's scheduler can lag a few
     # minutes at busy times — that's fine for this use case.
     - cron: "0 * * * *"
-  workflow_dispatch: {} # lets you trigger a run manually from the Actions tab, any time
+  workflow_dispatch:
+    inputs:
+      test_email:
+        description: "Send a test email instead of scraping (for testing SMTP credentials)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write # needed so the workflow can commit the updated data.json
@@ -31,6 +36,7 @@ jobs:
           BREVO_SMTP_LOGIN: ${{ secrets.BREVO_SMTP_LOGIN }}
           BREVO_SMTP_KEY: ${{ secrets.BREVO_SMTP_KEY }}
           BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
+          TEST_EMAIL_MODE: ${{ (github.event.inputs.test_email == 'true') && '1' || '0' }}
         run: python scrape_and_notify.py
 
       - name: Commit updated data if changed
