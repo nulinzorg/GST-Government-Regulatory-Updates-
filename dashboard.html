@@ -74,18 +74,20 @@
 
   main { padding: 20px 0 60px; }
 
-  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
-  @media (min-width: 800px) { .cards { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } }
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+  @media (min-width: 800px) {
+    .cards { grid-template-columns: repeat(6, 1fr); gap: 8px; overflow-x: auto; }
+  }
   .card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-    padding: 14px; text-align: left; transition: box-shadow .15s;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; text-align: left; transition: box-shadow .15s; min-width: 0;
   }
   .card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
   .card.active { box-shadow: 0 0 0 1px var(--accent); border-color: var(--accent); }
   .card-top { display: flex; justify-content: space-between; align-items: center; }
-  .card-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
-  .card-value { font-size: 22px; font-weight: 600; margin: 8px 0 2px; }
-  .card-hint { font-size: 11px; color: var(--text-muted); }
+  .card-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); line-height: 1.3; display: block; }
+  .card-value { font-size: 20px; font-weight: 600; margin: 6px 0 2px; }
+  .card-hint { font-size: 10px; color: var(--text-muted); line-height: 1.3; }
   .card-hint.active-hint { font-weight: 500; }
 
   .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
@@ -480,7 +482,6 @@ function renderCards() {
   const highPriority = ALL_UPDATES.filter(u => u.priority === "High").length;
   const gstCount = ALL_UPDATES.filter(u => u.department === "GST").length;
   const cbicCount = ALL_UPDATES.filter(u => u.department === "CBIC").length;
-  const circularCount = ALL_UPDATES.filter(u => u.category === "Circular").length;
   const notificationCount = ALL_UPDATES.filter(u => u.category === "Notification").length;
   const highAlertCount = ALL_UPDATES.filter(u => u.category === "Notification" && u.priority === "High").length;
 
@@ -489,7 +490,6 @@ function renderCards() {
     { label: "High Priority Updates", value: highPriority, accent: "#DC2626", type: "priority", filterValue: "High" },
     { label: "GST Updates", value: gstCount, accent: "#0F766E", type: "department", filterValue: "GST" },
     { label: "CBIC Updates", value: cbicCount, accent: "#854D0E", type: "department", filterValue: "CBIC" },
-    { label: "Circulars", value: circularCount, accent: "#3730A3", type: "category", filterValue: "Circular" },
     { label: "Notifications", value: notificationCount, accent: "#6D28D9", type: "category", filterValue: "Notification" },
     { label: "High Alert Notifications", value: highAlertCount, accent: "#B91C1C", type: "compound", filterValue: { category: "Notification", priority: "High" } },
   ];
@@ -518,7 +518,7 @@ function renderCards() {
       </div>
       <div class="card-value">${c.value}</div>
       <div class="card-hint" style="color:${active ? c.accent : 'var(--text-muted)'}">
-        ${active ? "Showing this filter — click to clear" : "Click to view these updates"}
+        ${active ? "Active — click to clear" : "Click to filter"}
       </div>
     `;
     div.onclick = () => handleCardClick(c);
