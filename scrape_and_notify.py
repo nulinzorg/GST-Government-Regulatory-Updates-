@@ -251,15 +251,6 @@ def scrape_gstn_advisories():
                 continue
 
         print(f"  [debug] items captured with real URLs: {len(items)}")
-        for link in links:
-            title = link.text.strip()
-            href = link.get_attribute("href")
-            if not title or not href or len(title.split()) < 3:
-                continue
-            items.append(to_regulatory_update(
-                title=title, href=href, dept="GSTN", category="Notification",
-                priority="Medium", item_date=None, needs_review=True,
-            ))
     finally:
         driver.quit()
     return items
@@ -342,7 +333,7 @@ def send_email_alert(new_items):
 # Main
 # ---------------------------------------------------------------------------
 def main():
-    print("=== SCRIPT VERSION: v6-xpath-contains-selector ===")
+    print("=== SCRIPT VERSION: v7-fixed-undefined-links-bug ===")
     existing = load_existing()
     existing_sources = {u["source"] for u in existing}
 
