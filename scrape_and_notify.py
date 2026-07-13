@@ -182,12 +182,18 @@ def scrape_gstn_advisories():
     driver = webdriver.Chrome(options=options)
     items = []
     try:
-        driver.get(GSTN_ADVISORY_URL)
-        # implicitly_wait only affects find_element's retry timeout — it does
-        # NOT force a real pause for a JavaScript app to finish rendering.
-        # Confirmed via debug output: body text was only 4 chars, meaning we
-        # checked before Angular had actually rendered anything. This is a
-        # real, forced pause instead.
+        # Direct-loading the deep advisory URL was landing on the site's
+        # generic homepage/shell instead of the actual advisory list —
+        # confirmed via debug output (we found a nav link *to* this exact
+        # URL sitting in the results, meaning we never actually left the
+        # homepage). Angular-style apps sometimes don't correctly
+        # initialize a deep route on a fresh page load. Loading the
+        # homepage first and clicking through like a real visitor is more
+        # reliable for this kind of app.
+        driver.get("https://services.gst.gov.in/")
+        time.sleep(6)
+        nav_link = driver.find_element(By.XPATH, "//a[contains(@href, 'advisoryandreleases')]")
+        nav_link.click()
         time.sleep(8)
         page_title = driver.title
         body_text_length = len(driver.find_element(By.TAG_NAME, "body").text)
