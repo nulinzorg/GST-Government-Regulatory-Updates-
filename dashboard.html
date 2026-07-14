@@ -545,9 +545,9 @@ function handleCardClick(c) {
     (c.type === "department" && filters.departments.length === 1 && filters.departments[0] === c.filterValue);
 
   if (isCurrentlyActive) {
-    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: "", dateTo: "" };
+    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sixMonthsAgoStr(), dateTo: todayStr() };
   } else {
-    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: "", dateTo: "" };
+    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sixMonthsAgoStr(), dateTo: todayStr() };
     if (c.type === "date") { filters.dateFrom = c.filterValue; filters.dateTo = c.filterValue; }
     if (c.type === "priority") filters.priority = c.filterValue;
     if (c.type === "category") filters.category = c.filterValue;
@@ -608,7 +608,7 @@ document.getElementById("priority-filter").addEventListener("change", e => { fil
 document.getElementById("date-from").addEventListener("change", e => { filters.dateFrom = e.target.value; render(); });
 document.getElementById("date-to").addEventListener("change", e => { filters.dateTo = e.target.value; render(); });
 document.getElementById("clear-filters").addEventListener("click", () => {
-  filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: "", dateTo: "" };
+  filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sixMonthsAgoStr(), dateTo: todayStr() };
   render();
 });
 document.getElementById("search").addEventListener("input", e => { query = e.target.value; render(); });
