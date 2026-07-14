@@ -1,6 +1,7 @@
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 selenium>=4.20.0
+pdfplumber>=0.11.0
 
 # Email uses only Python's built-in smtplib/email modules — no extra
 # package needed. Sends via Brevo's free SMTP relay (300/day, no card,
@@ -11,3 +12,11 @@ selenium>=4.20.0
 # HTTP request can't read it. The GitHub Actions workflow installs a
 # matching Chrome browser automatically; nothing to install locally
 # unless you also want to run this script on your own machine.
+#
+# pdfplumber extracts real text from CBIC's PDF notifications, so the AI
+# analysis step can read the actual content instead of just the title.
+#
+# AI analysis (classify_notification + ai_analyze in scrape_and_notify.py)
+# calls the Claude API directly via `requests` — no extra SDK package
+# needed. Requires an ANTHROPIC_API_KEY secret to actually run; falls back
+# to a free keyword-based classifier if that secret isn't set.
