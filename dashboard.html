@@ -193,7 +193,7 @@
         <div class="brand-icon">GST</div>
         <div>
           <h1>Government Regulatory Updates</h1>
-          <p>GST · CBIC · NIC e-Way Bill · NIC e-Invoice · PIB</p>
+          <p>GSTN · CBIC · NIC e-Way Bill · NIC e-Invoice · PIB</p>
           <p style="margin-top:2px;">Auto-refreshes hourly via a scheduled GitHub Action — no local server needed</p>
         </div>
       </div>
@@ -256,7 +256,6 @@
 // Config — mirrors the React version's DEPARTMENTS / PRIORITY_STYLES
 // ---------------------------------------------------------------------------
 const DEPARTMENTS = {
-  "GST": { initials: "GST", color: "#1E3A5F" },
   "CBIC": { initials: "CB", color: "#0F766E" },
   "NIC e-Way Bill": { initials: "EWB", color: "#3730A3" },
   "NIC e-Invoice": { initials: "INV", color: "#6D28D9" },
@@ -427,7 +426,12 @@ function sixMonthsAgoStr() {
   return d.toISOString().slice(0, 10);
 }
 
-let filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sixMonthsAgoStr(), dateTo: todayStr() };
+// Default department selection — only GSTN, NIC e-Way Bill, and NIC e-Invoice
+// are on when the page loads. CBIC and PIB start OFF; click their toggle to
+// include them.
+const DEFAULT_DEPARTMENTS = ["GSTN", "NIC e-Way Bill", "NIC e-Invoice"];
+
+let filters = { departments: [...DEFAULT_DEPARTMENTS], category: "", priority: "", dateFrom: sixMonthsAgoStr(), dateTo: todayStr() };
 let query = "";
 
 function todayStr() {
@@ -486,7 +490,7 @@ function renderCards() {
   const today = todayStr();
   const totalToday = ALL_UPDATES.filter(u => u.date === today).length;
   const highPriority = ALL_UPDATES.filter(u => u.priority === "High").length;
-  const gstCount = ALL_UPDATES.filter(u => u.department === "GST").length;
+  const gstnCount = ALL_UPDATES.filter(u => u.department === "GSTN").length;
   const cbicCount = ALL_UPDATES.filter(u => u.department === "CBIC").length;
   const notificationCount = ALL_UPDATES.filter(u => u.category === "Notification").length;
   const highAlertCount = ALL_UPDATES.filter(u => u.category === "Notification" && u.priority === "High").length;
@@ -494,7 +498,7 @@ function renderCards() {
   const cardDefs = [
     { label: "Total Updates Today", value: totalToday, accent: "#1E3A5F", type: "date", filterValue: today },
     { label: "High Priority Updates", value: highPriority, accent: "#DC2626", type: "priority", filterValue: "High" },
-    { label: "GST Updates", value: gstCount, accent: "#0F766E", type: "department", filterValue: "GST" },
+    { label: "GSTN Updates", value: gstnCount, accent: "#0369A1", type: "department", filterValue: "GSTN" },
     { label: "CBIC Updates", value: cbicCount, accent: "#854D0E", type: "department", filterValue: "CBIC" },
     { label: "Notifications", value: notificationCount, accent: "#6D28D9", type: "category", filterValue: "Notification" },
     { label: "High Alert Notifications", value: highAlertCount, accent: "#B91C1C", type: "compound", filterValue: { category: "Notification", priority: "High" } },
@@ -636,6 +640,13 @@ function priorityBadge(priority) {
   </span>`;
 }
 
+function softwareImpactBadge(softwareImpact) {
+  if (!softwareImpact) return "";
+  return `<span class="badge" style="background:#FEF3C7; color:#92400E; margin-left:4px;" title="Likely requires an accounting/return-filing software update">
+    &#9889; Software impact
+  </span>`;
+}
+
 function renderTable() {
   const filtered = getFilteredUpdates();
   document.getElementById("count-label").textContent = `${filtered.length} of ${ALL_UPDATES.length} updates`;
@@ -655,7 +666,7 @@ function renderTable() {
       <td>${deptSeal(u.department)}${u.department}</td>
       <td style="max-width:220px;">${u.title}</td>
       <td style="max-width:280px; color:var(--text-secondary);">${u.summary}</td>
-      <td>${priorityBadge(u.priority)}</td>
+      <td>${priorityBadge(u.priority)}${softwareImpactBadge(u.softwareImpact)}</td>
       <td>
         <div class="source-row">
           <a class="source-link" href="${u.source}" target="_blank" rel="noopener noreferrer">Source</a>
@@ -698,7 +709,7 @@ function openDetail(id) {
     <div class="panel-body">
       <p class="panel-title">${u.title}</p>
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
-        ${priorityBadge(u.priority)}
+        ${priorityBadge(u.priority)}${softwareImpactBadge(u.softwareImpact)}
         <span style="font-size:12px; color:var(--text-muted);">Published ${fmtDate(u.date)}</span>
       </div>
       <h3>Summary</h3>
