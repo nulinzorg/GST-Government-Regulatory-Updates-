@@ -11,6 +11,14 @@ on:
         description: "Send a test email instead of scraping (for testing SMTP credentials)"
         type: boolean
         default: false
+      reclassify:
+        description: "One-time: backfill priority/softwareImpact on existing items (no scraping)"
+        type: boolean
+        default: false
+      full_refresh:
+        description: "Erase and redownload everything fresh from CBIC/GSTN (replaces data.json entirely, does not merge)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write # needed so the workflow can commit the updated data.json
@@ -36,7 +44,10 @@ jobs:
           BREVO_SMTP_LOGIN: ${{ secrets.BREVO_SMTP_LOGIN }}
           BREVO_SMTP_KEY: ${{ secrets.BREVO_SMTP_KEY }}
           BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TEST_EMAIL_MODE: ${{ (github.event.inputs.test_email == 'true') && '1' || '0' }}
+          RECLASSIFY_MODE: ${{ (github.event.inputs.reclassify == 'true') && '1' || '0' }}
+          FULL_REFRESH_MODE: ${{ (github.event.inputs.full_refresh == 'true') && '1' || '0' }}
         run: python scrape_and_notify.py
 
       - name: Commit updated data if changed
