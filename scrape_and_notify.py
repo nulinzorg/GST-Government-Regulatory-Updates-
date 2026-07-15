@@ -158,7 +158,7 @@ def to_regulatory_update(title, href, dept, category, priority, item_date, needs
         "source": href,
         "keyChanges": [],
         "effectiveDate": item_date,
-        "actionRequired": "Review the source document for details.",
+       "actionRequired": "",
 
         # Dashboard date = Notification Date
         "date": item_date,
@@ -471,7 +471,10 @@ Based on the ACTUAL CONTENT above (not just the title), respond with ONLY a JSON
 - "priority": "High", "Medium", or "Low". High = a validation change, a rule change, or an API change — including any new rule implemented for an API. Low = a regular circular detailing an explanation, or any other notification not related to a High-priority change (this is the default for anything that isn't clearly High). Medium = only when it genuinely cannot be determined as either Low or High after reading the full text.
 - "softwareImpact": true or false. True only if this genuinely requires or is likely to require a change in accounting/return-filing software behavior (e.g. e-Invoice, e-Way Bill, GSTR forms, IRN, registration, schema, or validation changes).
 - "summary": a genuine 2-3 sentence plain-English summary of what this notification actually says, based on the real content.
-- "keyChanges": an array of up to 4 short strings describing the specific changes, if any are stated.
+
+- "keyChanges": an array of up to 5 short strings describing the specific changes, if any are stated.
+
+- "actionRequired": a specific action that the taxpayer, finance team, GST team, compliance team, or ERP/software team should take after reading this notification.
 """
 
     try:
@@ -498,17 +501,29 @@ Based on the ACTUAL CONTENT above (not just the title), respond with ONLY a JSON
                 raw_text = raw_text[4:]
         parsed = json.loads(raw_text.strip())
         priority = parsed.get("priority") if parsed.get("priority") in {"High", "Medium", "Low"} else "Medium"
-        return {
-            "priority": priority,
-            "softwareImpact": bool(parsed.get("softwareImpact", False)),
-            "summary": (parsed.get("summary") or title).strip(),
-            "keyChanges": list(parsed.get("keyChanges", []))[:4],
-            "source": "ai",
-        }
+      return {
+    "priority": priority,
+    "softwareImpact": bool(parsed.get("softwareImpact", False)),
+    "summary": (parsed.get("summary") or title).strip(),
+    "keyChanges": list(parsed.get("keyChanges", []))[:5],
+    "actionRequired": (
+        parsed.get("actionRequired")
+        or "Review this notification and assess business impact."
+    ),
+    "source": "ai",
+}
     except Exception as exc:  # noqa: BLE001 — AI analysis is an enhancement, never a hard dependency
         print(f"  [debug] AI analysis failed for {title[:50]!r}, falling back to keywords: {exc}")
         priority, impact = classify_notification(title, full_text)
-        return {"priority": priority, "softwareImpact": impact, "summary": title, "keyChanges": [], "source": "keyword-fallback"}
+
+return {
+    "priority": priority,
+    "softwareImpact": impact,
+    "summary": title,
+    "keyChanges": [],
+    "actionRequired": "Review this notification.",
+    "source": "keyword-fallback"
+}
 
 
 # ---------------------------------------------------------------------------
@@ -766,8 +781,9 @@ def main():
         analysis = ai_analyze(item["title"], full_text)
         item["priority"] = analysis["priority"]
         item["softwareImpact"] = analysis["softwareImpact"]
-        item["summary"] = analysis["summary"]
-        item["keyChanges"] = analysis["keyChanges"]
+       item["summary"] = analysis["summary"]
+       item["keyChanges"] = analysis["keyChanges"]
+       item["actionRequired"] = analysis["actionRequired"]
         print(f"  [debug] analyzed {item['title'][:50]!r}: priority={analysis['priority']}, softwareImpact={analysis['softwareImpact']}, via={analysis['source']}")
 
     merged = existing + deduped
