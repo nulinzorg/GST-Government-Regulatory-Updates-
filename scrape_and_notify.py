@@ -213,11 +213,18 @@ def scrape_cbic():
                 if title_text.lower() in {"english", "hindi", "हिंदी"}:
                     rejected_junk += 1
                     continue
-                items.append(to_regulatory_update(
-                    title=title_text, href=urljoin(CBIC_HOME, href),
-                    dept="CBIC", category="Notification", priority="Medium",
-                    item_date=None, needs_review=True,
-                ))
+                date_match = ADVISORY_DATE_RE.search(title_text)
+
+items.append(to_regulatory_update(
+    title=title_text,
+    href=urljoin(CBIC_HOME, href),
+    dept="CBIC",
+    category="Notification",
+    priority="Medium",
+    item_date=parse_dd_mm_yyyy(date_match),
+    needs_review=date_match is None,
+))
+
             print(f"  [debug] What's New: {len(items)} accepted, rejected: {rejected_pdf} (no /pdf/), {rejected_words} (too few words), {rejected_junk} (english/hindi)")
             if sample_rejected_hrefs:
                 print(f"  [debug] sample of actual href values that were rejected (to see what the page really served):")
