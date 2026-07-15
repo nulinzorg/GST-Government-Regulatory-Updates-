@@ -1,47 +1,628 @@
-data.json — field-level change summary (not a raw diff, since JSON
-reformatting makes line diffs unreadable)
-=============================================================================
-
-35 items changed. In every single case, the ONLY field that changed is
-"id" — going from missing (None) to a unique sequential number.
-No date, title, summary, or any other field was altered.
-
-  id: None -> 9   Reviewing authority, Revisional Authority and Appellate...
-  id: None -> 10  Generation and quoting of Document Identification Number...
-  id: None -> 11  Instructions for processing of applications for GST reg...
-  id: None -> 12  Seeks to notify Central Goods and Services Tax (Second...
-  id: None -> 13  Clarification on applicability of late fee for delay...
-  id: None -> 14  Procedure to be followed in department appeal filed...
-  id: None -> 15  Clarification regarding GST rates & classification...
-  id: None -> 16  Clarifications regarding applicability of GST on certain...
-  id: None -> 17  Regularizing payment of GST on co-insurance premium...
-  id: None -> 18  Amendment to Circular No. 31/05/2018-GST, dated 9th...
-  id: None -> 19  Kind Attention : Advisory No. 11/2026 dated 24.06...
-  id: None -> 20  Kind attention to the Chewing tobacco, Jarda and Gutkha...
-  id: None -> 21  Kind Attention HSNS Taxpayers : Advisory No. 09/2026...
-  id: None -> 22  KIND ATTENTION : CENTRAL EXCISE / HSNS CESS/ SERVICE...
-  id: None -> 23  Kind attention to the Chewing tobacco, Jarda and Gutkha...
-  id: None -> 24  Kind Attention HSNS Taxpayers: Advisory No. 07/2026...
-  id: None -> 25  KIND ATTENTION: CENTRAL EXCISE TAXPAYERS : 31st MARCH...
-  id: None -> 26  Kind Attention HSNS Taxpayers : Advisory No. 06/2026...
-  id: None -> 27  Kind attention to the Chewing tobacco, Jarda and Gutkha...
-  id: None -> 28  Kind Attention HSNS Taxpayers : Advisory No. 04/2026...
-  id: None -> 29  Kind attention to the Chewing tobacco, Jarda and Gutkha...
-  id: None -> 30  Kind Attention: Advisory 01/2026 - HSNS Cess - Login...
-  id: None -> 31  Kind Attention: Advisory 02/2026 - Accounting Head...
-  id: None -> 32  Kind Attention of Central Excise Tax Payers: CBICMITRA...
-  id: None -> 33  Kind Attention : Directorate General of Systems, CBIC...
-  id: None -> 34  FAQs on Mandatory Capture of Ship-to Field and Voluntary...
-  id: None -> 35  Advisory on Revision of Timeline for Amendment of...
-  id: None -> 36  Gross and Net GST revenue collections for the month...
-  id: None -> 37  Advisory on e-Invoice API and e-Way Bill by IRN API...
-  id: None -> 38  Extension of timeline for implementation of mandatory...
-  id: None -> 39  Gross and Net GST revenue collections for the month...
-  id: None -> 40  Advisory to Taxpayers and Stakeholders – Enhancements...
-  id: None -> 41  Filing of Annexure-B for Refund Applications involving...
-  id: None -> 42  Gross and Net GST revenue collections for the month...
-  id: None -> 43  Introduction of IMS Offline Tool
-
-No item was deleted, no item was added, no title/summary/source/date/
-category/priority field was touched. All 43 original items are still
-present, just with ids filled in where missing.
+[
+  {
+    "id": 1,
+    "date": "2026-07-09",
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Scheduled maintenance on ACES-GST application, 11 July 2026",
+    "summary": "CBIC's Directorate General of Systems has scheduled a maintenance window on the ACES-GST application from 18:00 to 23:00 hrs on 11 July 2026. Services related to Central Excise, Service Tax, HSNS, SBS and SVLDRS will be unavailable during this period.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/",
+    "keyChanges": [
+      "Maintenance window fixed for 18:00-23:00 hrs on 11 July 2026",
+      "Central Excise, Service Tax, HSNS, SBS and SVLDRS services affected",
+      "GST return filing on the main GST portal is not affected"
+    ],
+    "effectiveDate": "2026-07-11",
+    "actionRequired": "Taxpayers needing ACES-GST services (Central Excise, Service Tax, HSNS, SBS, SVLDRS) should plan filings outside the maintenance window."
+  },
+  {
+    "id": 2,
+    "date": "2026-07-02",
+    "department": "NIC e-Way Bill",
+    "category": "FAQ",
+    "title": "GSTN FAQs on Voluntary Closure of e-Way Bill",
+    "summary": "GSTN published a detailed FAQ document clarifying the Voluntary e-Way Bill Closure facility: closure is optional, can be done on the date of delivery or the immediately succeeding day, and remains available up to one day after the EWB's validity expires.",
+    "priority": "Medium",
+    "source": "https://tutorial.gst.gov.in/downloads/news/faqs_on_voluntary_closure_of_e_way_bill_approved.pdf",
+    "keyChanges": [
+      "Confirms EWB closure is voluntary, not mandatory",
+      "Closure allowed on the date of delivery or the immediately succeeding day",
+      "Closure functionality stays available up to one day after EWB validity expiry"
+    ],
+    "effectiveDate": "2026-08-01",
+    "actionRequired": "Review the FAQ document and align internal delivery-confirmation processes before the 1 August 2026 go-live."
+  },
+  {
+    "id": 3,
+    "date": "2026-07-02",
+    "department": "NIC e-Invoice",
+    "category": "FAQ",
+    "title": "GSTN FAQs on mandatory Ship-to GSTIN across e-Invoice, e-Way Bill and IRN flows",
+    "summary": "A companion FAQ set explains how the mandatory Ship-to GSTIN requirement applies across the e-Way Bill API, e-Invoice API and e-Way Bill-by-IRN flows, including validation rules and treatment of unregistered consignees.",
+    "priority": "Medium",
+    "source": "https://tutorial.gst.gov.in/downloads/news/faqs_on_ship_to_field_approved_version.pdf",
+    "keyChanges": [
+      "Ship-to GSTIN mandatory wherever the Ship-to party is registered; 'URP' otherwise",
+      "In the Generate IRN payload, ShipDtls.Gstin becomes conditionally mandatory",
+      "Ship-to GSTIN will not be printed on the EWB or exposed via GET EWB APIs"
+    ],
+    "effectiveDate": "2026-08-01",
+    "actionRequired": "e-Invoice API integrators and IRPs should test the Generate IRN + e-Way Bill flow against the updated schema before 1 August 2026."
+  },
+  {
+    "id": 4,
+    "date": "2026-07-01",
+    "department": "PIB",
+    "category": "Press Release",
+    "title": "Gross GST collections for June 2026 rise 13.9% to ₹1,94,812 crore",
+    "summary": "Provisional data published on the GST portal shows gross GST revenue for June 2026 grew 13.9% year-on-year, led by a 34.6% surge in import-related GST. Net revenue after refunds rose 11.2% to ₹1,62,377 crore.",
+    "priority": "Low",
+    "source": "https://tutorial.gst.gov.in/downloads/news/for_publishing_monthly_gst_revenue_june_2026.pdf",
+    "keyChanges": [
+      "Gross GST collection: ₹1,94,812 crore, up 13.9% YoY",
+      "Import-led growth: import GST up 34.6% versus 6.5% domestic growth",
+      "Refunds up 29.1% to ₹32,436 crore; net revenue ₹1,62,377 crore"
+    ],
+    "effectiveDate": "2026-07-01",
+    "actionRequired": "Informational only — useful context for revenue and compliance trend analysis."
+  },
+  {
+    "id": 5,
+    "date": "2026-06-30",
+    "department": "GST",
+    "category": "Notification",
+    "title": "GST Appellate Tribunal appeal deadline extended to 31 July 2026",
+    "summary": "Notification S.O. 3502(E) extends the last date for filing appeals and applications before the GST Appellate Tribunal to 31 July 2026, superseding the earlier 30 June 2026 deadline, after stakeholders flagged portal filing pressure.",
+    "priority": "High",
+    "source": "https://cbic-gst.gov.in/central-tax-notifications.html",
+    "keyChanges": [
+      "Appeals against orders communicated before 1 May 2026: file by 31 July 2026",
+      "Appeals against orders communicated on/after 1 May 2026: normal 3-month limit applies",
+      "Applications on orders passed before 1 Feb 2026: file by 31 July 2026; otherwise normal 6-month limit"
+    ],
+    "effectiveDate": "2026-07-31",
+    "actionRequired": "Taxpayers with pending GSTAT appeals or applications should file before 31 July 2026 rather than waiting for a further extension."
+  },
+  {
+    "id": 6,
+    "date": "2026-06-24",
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Advisory No. 11/2026 — Two-Factor Authentication mandatory on ACES-GST portal",
+    "summary": "CBIC mandates two-factor authentication for Central Excise, SBS and HSNS taxpayers logging into the ACES-GST application, aligning the portal's login security with the main GST portal's existing 2FA rollout.",
+    "priority": "High",
+    "source": "https://cbic-gst.gov.in/",
+    "keyChanges": [
+      "2FA now mandatory for Central Excise, SBS and HSNS taxpayer logins",
+      "OTP-based verification required in addition to existing credentials",
+      "Applies specifically to the ACES-GST application, not the main GST portal"
+    ],
+    "effectiveDate": "2026-06-24",
+    "actionRequired": "Central Excise, SBS and HSNS taxpayers should confirm registered mobile numbers are current before their next ACES-GST login."
+  },
+  {
+    "id": 7,
+    "date": "2026-06-17",
+    "department": "NIC e-Invoice",
+    "category": "Notification",
+    "title": "Advisory on e-Invoice API and e-Way Bill by IRN API changes",
+    "summary": "GSTN's advisory on e-Invoice API and e-Way Bill by IRN API changes confirms Ship-to GSTIN becomes mandatory whenever Ship-to details are furnished, adds a Trade Name field, and formally sets 1 August 2026 as the production go-live.",
+    "priority": "Medium",
+    "source": "https://tutorial.gst.gov.in/downloads/news/advisory_einvoice_api_ewb_by_irn_approved.pdf",
+    "keyChanges": [
+      "Ship-to GSTIN mandatory in the IRN payload wherever Ship-to details are given",
+      "New optional 'TrdNm' (Trade Name) field added under ExpShipDtls",
+      "Ship-to GSTIN fixed at IRN generation cannot be amended for B2B/SEZ EWBs"
+    ],
+    "effectiveDate": "2026-08-01",
+    "actionRequired": "ERP and e-Invoice API integrators should re-test against the 1 August 2026 production timeline."
+  },
+  {
+    "id": 8,
+    "date": "2026-05-21",
+    "department": "NIC e-Way Bill",
+    "category": "Notification",
+    "title": "Advisory on enhancements to the e-Way Bill portal",
+    "summary": "GSTN's original advisory introducing two e-Way Bill enhancements: mandatory Ship-to GSTIN capture for Bill-To/Ship-To transactions, and a new voluntary facility letting suppliers, recipients, transporters or drivers formally close an e-Way Bill after delivery.",
+    "priority": "High",
+    "source": "https://tutorial.gst.gov.in/downloads/news/gstn_advisory_ewb_approved.pdf",
+    "keyChanges": [
+      "Ship-to GSTIN mandatory for Bill-To/Ship-To transactions ('URP' for unregistered consignees)",
+      "New voluntary EWB closure facility via portal, mobile OTP, or API",
+      "Originally scheduled for 15 June 2026 (later postponed to 1 August 2026)"
+    ],
+    "effectiveDate": "2026-08-01",
+    "actionRequired": "Note the original 15 June 2026 date was postponed — the changes now go live 1 August 2026."
+  },
+  {
+    "department": "CBIC",
+    "category": "Notification",
+    "title": "Reviewing authority, Revisional Authority and Appellate Authority in respect of orders passed by Common Adjudicating Authority (CAA) for show cause notices issued by DGGI -reg.",
+    "summary": "Reviewing authority, Revisional Authority and Appellate Authority in respect of orders passed by Common Adjudicating Authority (CAA) for show cause notices issued by DGGI -reg.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/Circular-No-250-2025.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-12",
+    "_needsReview": true,
+    "id": 9
+  },
+  {
+    "department": "CBIC",
+    "category": "Notification",
+    "title": "Generation and quoting of Document Identification Number(DIN) on any communication issued by the officers of the Central Board of Indirect Taxes and Customs (CBIC) to tax payers and other concerned persons - reg.s",
+    "summary": "Generation and quoting of Document Identification Number(DIN) on any communication issued by the officers of the Central Board of Indirect Taxes and Customs (CBIC) to tax payers and other concerned persons - reg.s",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/Circular-No-249-2025.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-12",
+    "_needsReview": true,
+    "id": 10
+  },
+  {
+    "department": "CBIC",
+    "category": "Notification",
+    "title": "Instructions for processing of applications for GST registration - regarding.",
+    "summary": "Instructions for processing of applications for GST registration - regarding.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/ins-gst-no-03-2025.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-12",
+    "_needsReview": true,
+    "id": 11
+  },
+  {
+    "department": "CBIC",
+    "category": "Notification",
+    "title": "Seeks to notify Central Goods and Services Tax (Second Amendment) Rules 2025",
+    "summary": "Seeks to notify Central Goods and Services Tax (Second Amendment) Rules 2025",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/gst-ct-11-2025.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-12",
+    "_needsReview": true,
+    "id": 12
+  },
+  {
+    "department": "CBIC",
+    "category": "Notification",
+    "title": "Clarification on applicability of late fee for delay in furnishing of FORM GSTR-9C- reg.",
+    "summary": "Clarification on applicability of late fee for delay in furnishing of FORM GSTR-9C- reg.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/cir-cgst-246-03-2025.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-12",
+    "_needsReview": true,
+    "id": 13
+  },
+  {
+    "department": "CBIC",
+    "category": "Notification",
+    "title": "Procedure to be followed in department appeal filed against interest and/or penalty only, related to Section 128A of the CGST Act, 2017 -regarding.",
+    "summary": "Procedure to be followed in department appeal filed against interest and/or penalty only, related to Section 128A of the CGST Act, 2017 -regarding.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/ins-gst-02-2025.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-12",
+    "_needsReview": true,
+    "id": 14
+  },
+  {
+    "department": "CBIC",
+    "category": "Notification",
+    "title": "Clarification regarding GST rates & classification (goods) based on the recommendations of the GST Council in its 55th meeting held on 21st December, 2024, at Jaisalmer -reg.",
+    "summary": "Clarification regarding GST rates & classification (goods) based on the recommendations of the GST Council in its 55th meeting held on 21st December, 2024, at Jaisalmer -reg.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/GST-Circular.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-12",
+    "_needsReview": true,
+    "id": 15
+  },
+  {
+    "department": "CBIC",
+    "category": "Notification",
+    "title": "Clarifications regarding applicability of GST on certain services – reg.",
+    "summary": "Clarifications regarding applicability of GST on certain services – reg.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/Circular-55thGSTC-Services.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-12",
+    "_needsReview": true,
+    "id": 16
+  },
+  {
+    "department": "CBIC",
+    "category": "Notification",
+    "title": "Regularizing payment of GST on co-insurance premium apportioned by the lead insurer to the co-insurer and on ceding /re-insurance commission deducted from the reinsurance premium paid by the insurer to the reinsurer – reg.",
+    "summary": "Regularizing payment of GST on co-insurance premium apportioned by the lead insurer to the co-insurer and on ceding /re-insurance commission deducted from the reinsurance premium paid by the insurer to the reinsurer – reg.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/Circular-Services-Co-insurance-Re-insurance.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-12",
+    "_needsReview": true,
+    "id": 17
+  },
+  {
+    "department": "CBIC",
+    "category": "Notification",
+    "title": "Amendment to Circular No. 31/05/2018-GST, dated 9th February, 2018 on 'Proper officer under sections 73 and 74 of the Central Goods and Services Tax Act, 2017 and under the Integrated Goods and Services Tax Act, 2017'–reg.",
+    "summary": "Amendment to Circular No. 31/05/2018-GST, dated 9th February, 2018 on 'Proper officer under sections 73 and 74 of the Central Goods and Services Tax Act, 2017 and under the Integrated Goods and Services Tax Act, 2017'–reg.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/circular-239-33-2024-GST.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-12",
+    "_needsReview": true,
+    "id": 18
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind Attention : Advisory No. 11/2026 dated 24.06.2026 on 2 Factor Authentication for Central Excise, SBS & HSNS Taxpayers is available under ACES(CE&ST)>Advisories for ACES(CE & ST) and HSNS>HSNS CESS Legislation",
+    "summary": "Kind Attention : Advisory No. 11/2026 dated 24.06.2026 on 2 Factor Authentication for Central Excise, SBS & HSNS Taxpayers is available under ACES(CE&ST)>Advisories for ACES(CE & ST) and HSNS>HSNS CESS Legislation",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/Advisory No. 11of 2026 on 2 Factor Authentication.pdf",
+    "keyChanges": [],
+    "effectiveDate": "2026-06-24",
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-06-24",
+    "_needsReview": false,
+    "id": 19
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind attention to the Chewing tobacco, Jarda and Gutkha Manufacturers: Advisory No. 10/2026 dated 09.06.2026 on CE INT 01/CE INT 02 (Filing Procedure for Sealing/De-Sealing request) is available under ACES(CE&ST)",
+    "summary": "Kind attention to the Chewing tobacco, Jarda and Gutkha Manufacturers: Advisory No. 10/2026 dated 09.06.2026 on CE INT 01/CE INT 02 (Filing Procedure for Sealing/De-Sealing request) is available under ACES(CE&ST)",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/Advisory No. 10 of 2026 dated 09.06.2026 on filing procedure of CE INT 01 and CE_INT02.pdf",
+    "keyChanges": [],
+    "effectiveDate": "2026-06-09",
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-06-09",
+    "_needsReview": false,
+    "id": 20
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind Attention HSNS Taxpayers : Advisory No. 09/2026 dated 05.06.2026 on HSNS INT 01/INT 02 (Filing Procedure for Sealing/De-Sealing request) for HSNS Cess Registered Persons is available under HSNS",
+    "summary": "Kind Attention HSNS Taxpayers : Advisory No. 09/2026 dated 05.06.2026 on HSNS INT 01/INT 02 (Filing Procedure for Sealing/De-Sealing request) for HSNS Cess Registered Persons is available under HSNS",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/Advisory No. 09_2026 dated 050626_HSNS_ for filing Sealing_De sealing request.pdf",
+    "keyChanges": [],
+    "effectiveDate": "2026-06-05",
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-06-05",
+    "_needsReview": false,
+    "id": 21
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "KIND ATTENTION : CENTRAL EXCISE / HSNS CESS/ SERVICE TAX & SBS TAXPAYERS: Two-Factor Authentication (2FA) at the time of User Login is being introduced now. Please Click Here For Details",
+    "summary": "KIND ATTENTION : CENTRAL EXCISE / HSNS CESS/ SERVICE TAX & SBS TAXPAYERS: Two-Factor Authentication (2FA) at the time of User Login is being introduced now. Please Click Here For Details",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/Introduction_of_2FA.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 22
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind attention to the Chewing tobacco, Jarda and Gutkha Manufacturers: Advisory No. 08/2026 dated 24.04.2026 on CE Amendment Declaration filing Procedure is available under ACES(CE&ST)>Advisories",
+    "summary": "Kind attention to the Chewing tobacco, Jarda and Gutkha Manufacturers: Advisory No. 08/2026 dated 24.04.2026 on CE Amendment Declaration filing Procedure is available under ACES(CE&ST)>Advisories",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/AdvisoryNo 08 of 2026_CE Declaration_Change _Addition_disposal of machines.pdf",
+    "keyChanges": [],
+    "effectiveDate": "2026-04-24",
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-04-24",
+    "_needsReview": false,
+    "id": 23
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind Attention HSNS Taxpayers: Advisory No. 07/2026 dated 17.04.2026 on HSNS Amendment Declaration filing Procedure for HSNS Cess Registered Persons is available under HSNS>HSNS CESS Legislation.",
+    "summary": "Kind Attention HSNS Taxpayers: Advisory No. 07/2026 dated 17.04.2026 on HSNS Amendment Declaration filing Procedure for HSNS Cess Registered Persons is available under HSNS>HSNS CESS Legislation.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/AdvisoryNo. 07_2026HSNSAMENDMENT DECLARATION.pdf",
+    "keyChanges": [],
+    "effectiveDate": "2026-04-17",
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-04-17",
+    "_needsReview": false,
+    "id": 24
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "KIND ATTENTION: CENTRAL EXCISE TAXPAYERS : 31st MARCH 2026 IS THE DUE DATE FOR PAYMENT OF CENTRAL EXCISE DUTY FOR THE MONTH OF MARCH 2026. please click here Click here for Advisory.",
+    "summary": "KIND ATTENTION: CENTRAL EXCISE TAXPAYERS : 31st MARCH 2026 IS THE DUE DATE FOR PAYMENT OF CENTRAL EXCISE DUTY FOR THE MONTH OF MARCH 2026. please click here Click here for Advisory.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/DuePayment.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 25
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind Attention HSNS Taxpayers : Advisory No. 06/2026 dated 12.03.2026 on HSNS Return filing Procedure for HSNS Cess Registered Persons is available under HSNS>HSNS CESS Legislation",
+    "summary": "Kind Attention HSNS Taxpayers : Advisory No. 06/2026 dated 12.03.2026 on HSNS Return filing Procedure for HSNS Cess Registered Persons is available under HSNS>HSNS CESS Legislation",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/AdvisoryNo.06of2026dated12.03.26onfilingofHSNSReturns_RET-01.pdf",
+    "keyChanges": [],
+    "effectiveDate": "2026-03-12",
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-03-12",
+    "_needsReview": false,
+    "id": 26
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind attention to the Chewing tobacco, Jarda and Gutkha Manufacturers: As per the Notification No. 05/2025-Central Excise (N.T.) dated 31.12.2025, As per sub-section (2)",
+    "summary": "Kind attention to the Chewing tobacco, Jarda and Gutkha Manufacturers: As per the Notification No. 05/2025-Central Excise (N.T.) dated 31.12.2025, As per sub-section (2)",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/ADVISORY_05-2026_CE_PMT_01.pdf",
+    "keyChanges": [],
+    "effectiveDate": "2025-12-31",
+    "actionRequired": "Review the source document for details.",
+    "date": "2025-12-31",
+    "_needsReview": false,
+    "id": 27
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind Attention HSNS Taxpayers : Advisory No. 04/2026 dated 09.02.2026 on HSNS Declaration filing Procedure for HSNS Cess Registered person is available under HSNS>HSNS CESS Legislation",
+    "summary": "Kind Attention HSNS Taxpayers : Advisory No. 04/2026 dated 09.02.2026 on HSNS Declaration filing Procedure for HSNS Cess Registered person is available under HSNS>HSNS CESS Legislation",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/HSNS_Declaration_filing_procedure.pdf",
+    "keyChanges": [],
+    "effectiveDate": "2026-02-09",
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-02-09",
+    "_needsReview": false,
+    "id": 28
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind attention to the Chewing tobacco, Jarda and Gutkha Manufacturers: Advisory No. 03/2026 dated 05.02.2026 on Central Excise Declaration filing Procedure for Central Excise",
+    "summary": "Kind attention to the Chewing tobacco, Jarda and Gutkha Manufacturers: Advisory No. 03/2026 dated 05.02.2026 on Central Excise Declaration filing Procedure for Central Excise",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/ADVISORY_03-2026_CE_DECLARATION.pdf",
+    "keyChanges": [],
+    "effectiveDate": "2026-02-05",
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-02-05",
+    "_needsReview": false,
+    "id": 29
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind Attention: Advisory 01/2026 - HSNS Cess - Login procedure and Filing Application for New Registration and Payment in the CBIC Taxpayer's portal – Reg, Please click here",
+    "summary": "Kind Attention: Advisory 01/2026 - HSNS Cess - Login procedure and Filing Application for New Registration and Payment in the CBIC Taxpayer's portal – Reg, Please click here",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/HSNS_Advisory_Helpdesk_01-2026.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 30
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind Attention: Advisory 02/2026 - Accounting Head for Payment of HSNS Cess – Reg, Please click here Click here for Advisory.",
+    "summary": "Kind Attention: Advisory 02/2026 - Accounting Head for Payment of HSNS Cess – Reg, Please click here Click here for Advisory.",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/Advisory022026.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 31
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind Attention of Central Excise Tax Payers: CBICMITRA HELPDESK Toll Free Number is changed from '1800-120-0232' to the New Toll Free Number \"1800-425-0232\" w.e.f. 1st August",
+    "summary": "Kind Attention of Central Excise Tax Payers: CBICMITRA HELPDESK Toll Free Number is changed from '1800-120-0232' to the New Toll Free Number \"1800-425-0232\" w.e.f. 1st August",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/Helpdesk-Advisory-8-2025-29072025.pdf",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 32
+  },
+  {
+    "department": "CBIC",
+    "category": "Order",
+    "title": "Kind Attention : Directorate General of Systems, CBIC has planned a maintenance activity in the ACES-GST Application between 18:00 Hours to 23:00 Hours on 11th July 2026 (coming weekend). Accordingly",
+    "summary": "Kind Attention : Directorate General of Systems, CBIC has planned a maintenance activity in the ACES-GST Application between 18:00 Hours to 23:00 Hours on 11th July 2026 (coming weekend). Accordingly",
+    "priority": "Medium",
+    "source": "https://cbic-gst.gov.in/pdf/procedure-locate-e-payment-challan.pdf",
+    "keyChanges": [],
+    "effectiveDate": "2026-06-24",
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-06-24",
+    "_needsReview": false,
+    "id": 33
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "FAQs on Mandatory Capture of Ship-to Field and Voluntary Closure of E-Way Bill, 2026",
+    "summary": "FAQs on Mandatory Capture of Ship-to Field and Voluntary Closure of E-Way Bill, 2026",
+    "priority": "Medium",
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/667",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 34
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Advisory on Revision of Timeline for Amendment of Aggregate Annual Turnover (AATO), 2026",
+    "summary": "Advisory on Revision of Timeline for Amendment of Aggregate Annual Turnover (AATO), 2026",
+    "priority": "Medium",
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/666",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 35
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Gross and Net GST revenue collections for the month of June, 2026",
+    "summary": "Gross and Net GST revenue collections for the month of June, 2026",
+    "priority": "Medium",
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/665",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 36
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Advisory on e-Invoice API and e-Way Bill by IRN API changes for mandatory capture of Ship-to GSTIN and Voluntary Closure of e-Way Bill",
+    "summary": "Advisory on e-Invoice API and e-Way Bill by IRN API changes for mandatory capture of Ship-to GSTIN and Voluntary Closure of e-Way Bill",
+    "priority": "Medium",
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/664",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 37
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Extension of timeline for implementation of mandatory \"Ship To GSTIN\" and Voluntary Closure of E-Way Bill functionalities",
+    "summary": "Extension of timeline for implementation of mandatory \"Ship To GSTIN\" and Voluntary Closure of E-Way Bill functionalities",
+    "priority": "Medium",
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/663",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 38
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Gross and Net GST revenue collections for the month of May, 2026",
+    "summary": "Gross and Net GST revenue collections for the month of May, 2026",
+    "priority": "Medium",
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/662",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 39
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Advisory to Taxpayers and Stakeholders – Enhancements in the e-Way Bill (EWB) Portal",
+    "summary": "Advisory to Taxpayers and Stakeholders – Enhancements in the e-Way Bill (EWB) Portal",
+    "priority": "Medium",
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/661",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 40
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Filing of Annexure-B for Refund Applications involving Accumulated ITC using the offline utility in GST portal",
+    "summary": "Filing of Annexure-B for Refund Applications involving Accumulated ITC using the offline utility in GST portal",
+    "priority": "Medium",
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/660",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 41
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Gross and Net GST revenue collections for the month of Apr, 2026",
+    "summary": "Gross and Net GST revenue collections for the month of Apr, 2026",
+    "priority": "Medium",
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/659",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 42
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Introduction of IMS Offline Tool",
+    "summary": "Introduction of IMS Offline Tool",
+    "priority": "Medium",
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/658",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-13",
+    "_needsReview": true,
+    "id": 43
+  }
+]
