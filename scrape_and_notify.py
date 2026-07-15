@@ -334,10 +334,48 @@ def scrape_gstn_advisories(driver):
             time.sleep(3)
             real_url = driver.current_url
             if "advisoryandreleases" in real_url and real_url != GSTN_ADVISORY_URL:
-                items.append(to_regulatory_update(
-                    title=title, href=real_url, dept="GSTN", category="Notification",
-                    priority="Medium", item_date=None, needs_review=True,
-                ))
+                date_text = ""
+
+try:
+    date_el = header_el.find_element(
+        By.XPATH,
+        "./following::*[contains(@class,'date')][1]"
+    )
+    date_text = date_el.text.strip()
+except Exception:
+    pass
+
+notification_date = None
+
+from datetime import datetime
+
+for fmt in (
+    "%d-%m-%Y",
+    "%d/%m/%Y",
+    "%d.%m.%Y",
+    "%d %b %Y",
+    "%d %B %Y"
+):
+    try:
+        notification_date = datetime.strptime(
+            date_text,
+            fmt
+        ).strftime("%Y-%m-%d")
+        break
+    except Exception:
+        pass
+
+items.append(
+    to_regulatory_update(
+        title=title,
+        href=real_url,
+        dept="GSTN",
+        category="Notification",
+        priority="Medium",
+        item_date=notification_date,
+        needs_review=notification_date is None,
+    )
+)
             driver.back()
             time.sleep(3)
         except Exception as exc:  # noqa: BLE001 — one bad item shouldn't stop the rest
