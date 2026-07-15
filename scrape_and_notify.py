@@ -143,21 +143,29 @@ def classify_notification(title, summary=""):
 
 
 def to_regulatory_update(title, href, dept, category, priority, item_date, needs_review=False):
-    from datetime import date
+    from datetime import datetime, timezone
+
     clean_title = title.strip()
     classified_priority, software_impact = classify_notification(clean_title)
+
     return {
         "department": dept,
         "category": category,
         "title": clean_title,
         "summary": clean_title,
-        "priority": classified_priority,  # was: hardcoded "Medium" for every scraped item
+        "priority": classified_priority,
         "softwareImpact": software_impact,
         "source": href,
         "keyChanges": [],
         "effectiveDate": item_date,
         "actionRequired": "Review the source document for details.",
-        "date": item_date or date.today().isoformat(),
+
+        # Dashboard date = Notification Date
+        "date": item_date,
+
+        # Internal audit/debugging only
+        "fetchedAt": datetime.now(timezone.utc).isoformat(),
+
         "_needsReview": needs_review,
     }
 
