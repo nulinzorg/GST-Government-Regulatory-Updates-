@@ -261,6 +261,12 @@ const DEPARTMENTS = {
   "NIC e-Invoice": { initials: "INV", color: "#6D28D9" },
   "PIB": { initials: "PIB", color: "#854D0E" },
   "GSTN": { initials: "GSTN", color: "#0369A1" },
+  // BUG FIX: data.json contains items tagged department "GST" (distinct
+  // from "GSTN") that had no entry here at all. Since the department
+  // toggle buttons and the "select all" filter are both generated from
+  // Object.keys(DEPARTMENTS), any item with this department could never
+  // be shown, no matter which toggles were active.
+  "GST": { initials: "GST", color: "#1E3A5F" },
 };
 const CATEGORIES = ["Notification", "Circular", "Order", "Press Release", "FAQ", "Amendment"];
 const PRIORITIES = ["High", "Medium", "Low"];
@@ -415,14 +421,14 @@ const SEED_UPDATES = [
 // State
 // ---------------------------------------------------------------------------
 let ALL_UPDATES = [];
-// Default the dashboard to "last 6 months" on load — a simple rolling
-// window with no calendar-boundary edge cases to worry about (unlike a
-// fixed financial-year-start date, this needs no special handling when
-// a new year or FY begins; it just always means "6 months back from
-// whatever today happens to be").
-function sixMonthsAgoStr() {
+// Default the dashboard to "1st of the month, 7 months back" on load —
+// e.g. on 15 Jul 2026 this resolves to 1 Dec 2025. Anchoring to the 1st
+// of a month (rather than a rolling day-for-day window) gives a cleaner,
+// predictable boundary and currently covers the full dataset.
+function sevenMonthsAgoFirstOfMonthStr() {
   const d = new Date();
-  d.setMonth(d.getMonth() - 6);
+  d.setDate(1); // pin to the 1st before subtracting months, so month math never skips/rolls oddly
+  d.setMonth(d.getMonth() - 7);
   return d.toISOString().slice(0, 10);
 }
 
@@ -431,7 +437,7 @@ function sixMonthsAgoStr() {
 // include them.
 const DEFAULT_DEPARTMENTS = ["GSTN", "NIC e-Way Bill", "NIC e-Invoice"];
 
-let filters = { departments: [...DEFAULT_DEPARTMENTS], category: "", priority: "", dateFrom: sixMonthsAgoStr(), dateTo: todayStr() };
+let filters = { departments: [...DEFAULT_DEPARTMENTS], category: "", priority: "", dateFrom: sevenMonthsAgoFirstOfMonthStr(), dateTo: todayStr() };
 let query = "";
 
 function todayStr() {
@@ -545,9 +551,9 @@ function handleCardClick(c) {
     (c.type === "department" && filters.departments.length === 1 && filters.departments[0] === c.filterValue);
 
   if (isCurrentlyActive) {
-    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sixMonthsAgoStr(), dateTo: todayStr() };
+    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sevenMonthsAgoFirstOfMonthStr(), dateTo: todayStr() };
   } else {
-    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sixMonthsAgoStr(), dateTo: todayStr() };
+    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sevenMonthsAgoFirstOfMonthStr(), dateTo: todayStr() };
     if (c.type === "date") { filters.dateFrom = c.filterValue; filters.dateTo = c.filterValue; }
     if (c.type === "priority") filters.priority = c.filterValue;
     if (c.type === "category") filters.category = c.filterValue;
@@ -608,7 +614,7 @@ document.getElementById("priority-filter").addEventListener("change", e => { fil
 document.getElementById("date-from").addEventListener("change", e => { filters.dateFrom = e.target.value; render(); });
 document.getElementById("date-to").addEventListener("change", e => { filters.dateTo = e.target.value; render(); });
 document.getElementById("clear-filters").addEventListener("click", () => {
-  filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sixMonthsAgoStr(), dateTo: todayStr() };
+  filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sevenMonthsAgoFirstOfMonthStr(), dateTo: todayStr() };
   render();
 });
 document.getElementById("search").addEventListener("input", e => { query = e.target.value; render(); });
