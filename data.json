@@ -232,10 +232,10 @@
     "softwareImpact": false,
     "source": "https://cbic-gst.gov.in/pdf/DuePayment.pdf",
     "keyChanges": [],
-    "effectiveDate": null,
+    "effectiveDate": "2026-03-31",
     "actionRequired": "Review the source document for details.",
-    "date": "2026-07-15",
-    "_needsReview": true
+    "date": "2026-03-31",
+    "_needsReview": false
   },
   {
     "department": "CBIC",
@@ -330,10 +330,10 @@
     "softwareImpact": false,
     "source": "https://cbic-gst.gov.in/pdf/Helpdesk-Advisory-8-2025-29072025.pdf",
     "keyChanges": [],
-    "effectiveDate": null,
+    "effectiveDate": "2025-08-01",
     "actionRequired": "Review the source document for details.",
-    "date": "2026-07-15",
-    "_needsReview": true
+    "date": "2025-08-01",
+    "_needsReview": false
   },
   {
     "department": "CBIC",
@@ -358,107 +358,9 @@
     "softwareImpact": false,
     "source": "https://cbic-gst.gov.in/pdf/circular-239-33-2024-GST.pdf",
     "keyChanges": [],
-    "effectiveDate": null,
+    "effectiveDate": "2018-02-09",
     "actionRequired": "Review the source document for details.",
-    "date": "2026-07-15",
-    "_needsReview": true
-  },
-  {
-    "department": "GSTN",
-    "category": "Notification",
-    "title": "FAQs on Mandatory Capture of Ship-to Field and Voluntary Closure of E-Way Bill, 2026",
-    "summary": "FAQs on Mandatory Capture of Ship-to Field and Voluntary Closure of E-Way Bill, 2026",
-    "priority": "High",
-    "softwareImpact": true,
-    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/667",
-    "keyChanges": [],
-    "effectiveDate": null,
-    "actionRequired": "Review the source document for details.",
-    "date": "2026-07-15",
-    "_needsReview": true
-  },
-  {
-    "department": "GSTN",
-    "category": "Notification",
-    "title": "Advisory on Revision of Timeline for Amendment of Aggregate Annual Turnover (AATO), 2026",
-    "summary": "Advisory on Revision of Timeline for Amendment of Aggregate Annual Turnover (AATO), 2026",
-    "priority": "High",
-    "softwareImpact": true,
-    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/666",
-    "keyChanges": [],
-    "effectiveDate": null,
-    "actionRequired": "Review the source document for details.",
-    "date": "2026-07-15",
-    "_needsReview": true
-  },
-  {
-    "department": "GSTN",
-    "category": "Notification",
-    "title": "Gross and Net GST revenue collections for the month of June, 2026",
-    "summary": "Gross and Net GST revenue collections for the month of June, 2026",
-    "priority": "High",
-    "softwareImpact": true,
-    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/665",
-    "keyChanges": [],
-    "effectiveDate": null,
-    "actionRequired": "Review the source document for details.",
-    "date": "2026-07-15",
-    "_needsReview": true
-  },
-  {
-    "department": "GSTN",
-    "category": "Notification",
-    "title": "Advisory on e-Invoice API and e-Way Bill by IRN API changes for mandatory capture of Ship-to GSTIN and Voluntary Closure of e-Way Bill",
-    "summary": "Advisory on e-Invoice API and e-Way Bill by IRN API changes for mandatory capture of Ship-to GSTIN and Voluntary Closure of e-Way Bill",
-    "priority": "High",
-    "softwareImpact": true,
-    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/664",
-    "keyChanges": [],
-    "effectiveDate": null,
-    "actionRequired": "Review the source document for details.",
-    "date": "2026-07-15",
-    "_needsReview": true
-  },
-  {
-    "department": "GSTN",
-    "category": "Notification",
-    "title": "Extension of timeline for implementation of mandatory \"Ship To GSTIN\" and Voluntary Closure of E-Way Bill functionalities",
-    "summary": "Extension of timeline for implementation of mandatory \"Ship To GSTIN\" and Voluntary Closure of E-Way Bill functionalities",
-    "priority": "High",
-    "softwareImpact": true,
-    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/663",
-    "keyChanges": [],
-    "effectiveDate": null,
-    "actionRequired": "Review the source document for details.",
-    "date": "2026-07-15",
-    "_needsReview": true
-  },
-  {
-    "department": "GSTN",
-    "category": "Notification",
-    "title": "Gross and Net GST revenue collections for the month of May, 2026",
-    "summary": "Gross and Net GST revenue collections for the month of May, 2026",
-    "priority": "High",
-    "softwareImpact": true,
-    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/662",
-    "keyChanges": [],
-    "effectiveDate": null,
-    "actionRequired": "Review the source document for details.",
-    "date": "2026-07-15",
-    "_needsReview": true
-  },
-  {
-    "department": "GSTN",
-    "category": "Notification",
-    "title": "Advisory to Taxpayers and Stakeholders – Enhancements in the e-Way Bill (EWB) Portal",
-    "summary": "Advisory to Taxpayers and Stakeholders – Enhancements in the e-Way Bill (EWB) Portal",
-    "priority": "High",
-    "softwareImpact": true,
-    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/661",
-    "keyChanges": [],
-    "effectiveDate": null,
-    "actionRequired": "Review the source document for details.",
-    "date": "2026-07-15",
-    "_needsReview": true
+    "date": "2018-02-09",
+    "_needsReview": false
   }
 ]
