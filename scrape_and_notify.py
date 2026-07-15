@@ -46,6 +46,20 @@ GSTN_ADVISORY_URL = "https://services.gst.gov.in/services/advisory/advisoryandre
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; GSTDashboardBot/1.0; internal, non-commercial use)"}
 ADVISORY_DATE_RE = re.compile(r"dated\s+(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})", re.IGNORECASE)
 
+# Catches worded dates like "31st March 2026", "9th February 2018", "24 June
+# 2026" — the ticker text mixes this style with the numeric "dated DD.MM.YYYY"
+# style above, and previously only the numeric one was recognized. A missed
+# date silently fell back to today's scrape date instead of the real
+# notification date — this covers the other common phrasing.
+MONTH_NAMES = {
+    "january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
+    "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12,
+}
+WORDED_DATE_RE = re.compile(
+    r"(\d{1,2})(?:st|nd|rd|th)?\s+(" + "|".join(MONTH_NAMES.keys()) + r")\.?,?\s+(\d{4})",
+    re.IGNORECASE,
+)
+
 
 # ---------------------------------------------------------------------------
 # Scraping (same logic as the local version — see scrape_gst_updates.py for
@@ -57,6 +71,28 @@ def parse_dd_mm_yyyy(match):
     dd, mm, yy = match.groups()
     yyyy = f"20{yy}" if len(yy) == 2 else yy
     return f"{yyyy}-{mm.zfill(2)}-{dd.zfill(2)}"
+
+
+def parse_worded_date(match):
+    if not match:
+        return None
+    dd, month_name, yyyy = match.groups()
+    mm = MONTH_NAMES[month_name.lower()]
+    return f"{yyyy}-{mm:02d}-{int(dd):02d}"
+
+
+def extract_date_from_text(text):
+    """Tries the numeric 'dated DD.MM.YYYY' pattern first, then the worded
+    '31st March 2026' style, returning the first real date found, or None
+    if neither matches — in which case the caller falls back to today's
+    scrape date rather than guessing further."""
+    numeric_match = ADVISORY_DATE_RE.search(text)
+    if numeric_match:
+        return parse_dd_mm_yyyy(numeric_match)
+    worded_match = WORDED_DATE_RE.search(text)
+    if worded_match:
+        return parse_worded_date(worded_match)
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -143,29 +179,21 @@ def classify_notification(title, summary=""):
 
 
 def to_regulatory_update(title, href, dept, category, priority, item_date, needs_review=False):
-    from datetime import datetime, timezone
-
+    from datetime import date
     clean_title = title.strip()
     classified_priority, software_impact = classify_notification(clean_title)
-
     return {
         "department": dept,
         "category": category,
         "title": clean_title,
         "summary": clean_title,
-        "priority": classified_priority,
+        "priority": classified_priority,  # was: hardcoded "Medium" for every scraped item
         "softwareImpact": software_impact,
         "source": href,
         "keyChanges": [],
         "effectiveDate": item_date,
-       "actionRequired": "",
-
-        # Dashboard date = Notification Date
-        "date": item_date,
-
-        # Internal audit/debugging only
-        "fetchedAt": datetime.now(timezone.utc).isoformat(),
-
+        "actionRequired": "Review the source document for details.",
+        "date": item_date or date.today().isoformat(),
         "_needsReview": needs_review,
     }
 
@@ -213,18 +241,11 @@ def scrape_cbic():
                 if title_text.lower() in {"english", "hindi", "हिंदी"}:
                     rejected_junk += 1
                     continue
-                date_match = ADVISORY_DATE_RE.search(title_text)
-
-items.append(to_regulatory_update(
-    title=title_text,
-    href=urljoin(CBIC_HOME, href),
-    dept="CBIC",
-    category="Notification",
-    priority="Medium",
-    item_date=parse_dd_mm_yyyy(date_match),
-    needs_review=date_match is None,
-))
-
+                items.append(to_regulatory_update(
+                    title=title_text, href=urljoin(CBIC_HOME, href),
+                    dept="CBIC", category="Notification", priority="Medium",
+                    item_date=None, needs_review=True,
+                ))
             print(f"  [debug] What's New: {len(items)} accepted, rejected: {rejected_pdf} (no /pdf/), {rejected_words} (too few words), {rejected_junk} (english/hindi)")
             if sample_rejected_hrefs:
                 print(f"  [debug] sample of actual href values that were rejected (to see what the page really served):")
@@ -240,11 +261,11 @@ items.append(to_regulatory_update(
         context = a.find_parent().get_text(" ", strip=True) if a.find_parent() else a.get_text()
         if not re.search(r"advisory|dated|maintenance", context, re.IGNORECASE):
             continue
-        date_match = ADVISORY_DATE_RE.search(context)
+        extracted_date = extract_date_from_text(context)
         items.append(to_regulatory_update(
             title=context[:200], href=urljoin(CBIC_HOME, a["href"]),
             dept="CBIC", category="Order", priority="Medium",
-            item_date=parse_dd_mm_yyyy(date_match), needs_review=date_match is None,
+            item_date=extracted_date, needs_review=extracted_date is None,
         ))
         ticker_added += 1
     print(f"  [debug] ticker section: {ticker_added} accepted")
@@ -334,48 +355,10 @@ def scrape_gstn_advisories(driver):
             time.sleep(3)
             real_url = driver.current_url
             if "advisoryandreleases" in real_url and real_url != GSTN_ADVISORY_URL:
-                date_text = ""
-
-try:
-    date_el = header_el.find_element(
-        By.XPATH,
-        "./following::*[contains(@class,'date')][1]"
-    )
-    date_text = date_el.text.strip()
-except Exception:
-    pass
-
-notification_date = None
-
-from datetime import datetime
-
-for fmt in (
-    "%d-%m-%Y",
-    "%d/%m/%Y",
-    "%d.%m.%Y",
-    "%d %b %Y",
-    "%d %B %Y"
-):
-    try:
-        notification_date = datetime.strptime(
-            date_text,
-            fmt
-        ).strftime("%Y-%m-%d")
-        break
-    except Exception:
-        pass
-
-items.append(
-    to_regulatory_update(
-        title=title,
-        href=real_url,
-        dept="GSTN",
-        category="Notification",
-        priority="Medium",
-        item_date=notification_date,
-        needs_review=notification_date is None,
-    )
-)
+                items.append(to_regulatory_update(
+                    title=title, href=real_url, dept="GSTN", category="Notification",
+                    priority="Medium", item_date=None, needs_review=True,
+                ))
             driver.back()
             time.sleep(3)
         except Exception as exc:  # noqa: BLE001 — one bad item shouldn't stop the rest
@@ -458,7 +441,7 @@ def ai_analyze(title, full_text):
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key or not full_text.strip():
         priority, impact = classify_notification(title, full_text)
-        return {"priority": priority, "softwareImpact": impact, "summary": title, "keyChanges": [], "source": "keyword-fallback"}
+        return {"priority": priority, "softwareImpact": impact, "summary": title, "keyChanges": [], "publishedDate": None, "source": "keyword-fallback"}
 
     prompt = f"""You are analyzing a GST/CBIC regulatory notification for an internal compliance dashboard used by a tax/accounting team.
 
@@ -471,10 +454,8 @@ Based on the ACTUAL CONTENT above (not just the title), respond with ONLY a JSON
 - "priority": "High", "Medium", or "Low". High = a validation change, a rule change, or an API change — including any new rule implemented for an API. Low = a regular circular detailing an explanation, or any other notification not related to a High-priority change (this is the default for anything that isn't clearly High). Medium = only when it genuinely cannot be determined as either Low or High after reading the full text.
 - "softwareImpact": true or false. True only if this genuinely requires or is likely to require a change in accounting/return-filing software behavior (e.g. e-Invoice, e-Way Bill, GSTR forms, IRN, registration, schema, or validation changes).
 - "summary": a genuine 2-3 sentence plain-English summary of what this notification actually says, based on the real content.
-
-- "keyChanges": an array of up to 5 short strings describing the specific changes, if any are stated.
-
-- "actionRequired": a specific action that the taxpayer, finance team, GST team, compliance team, or ERP/software team should take after reading this notification.
+- "keyChanges": an array of up to 4 short strings describing the specific changes, if any are stated.
+- "publishedDate": the date this notification was actually published/dated, in YYYY-MM-DD format, if the text states one (e.g. "dated 24.06.2026" or "31st March 2026"). Use null if no date is stated anywhere in the text.
 """
 
     try:
@@ -501,29 +482,23 @@ Based on the ACTUAL CONTENT above (not just the title), respond with ONLY a JSON
                 raw_text = raw_text[4:]
         parsed = json.loads(raw_text.strip())
         priority = parsed.get("priority") if parsed.get("priority") in {"High", "Medium", "Low"} else "Medium"
-      return {
-    "priority": priority,
-    "softwareImpact": bool(parsed.get("softwareImpact", False)),
-    "summary": (parsed.get("summary") or title).strip(),
-    "keyChanges": list(parsed.get("keyChanges", []))[:5],
-    "actionRequired": (
-        parsed.get("actionRequired")
-        or "Review this notification and assess business impact."
-    ),
-    "source": "ai",
-}
+        # Validate the AI's date claim looks like a real YYYY-MM-DD string
+        # before trusting it — never let a malformed value through.
+        published_date = parsed.get("publishedDate")
+        if published_date and not re.match(r"^\d{4}-\d{2}-\d{2}$", str(published_date)):
+            published_date = None
+        return {
+            "priority": priority,
+            "softwareImpact": bool(parsed.get("softwareImpact", False)),
+            "summary": (parsed.get("summary") or title).strip(),
+            "keyChanges": list(parsed.get("keyChanges", []))[:4],
+            "publishedDate": published_date,
+            "source": "ai",
+        }
     except Exception as exc:  # noqa: BLE001 — AI analysis is an enhancement, never a hard dependency
         print(f"  [debug] AI analysis failed for {title[:50]!r}, falling back to keywords: {exc}")
         priority, impact = classify_notification(title, full_text)
-
-return {
-    "priority": priority,
-    "softwareImpact": impact,
-    "summary": title,
-    "keyChanges": [],
-    "actionRequired": "Review this notification.",
-    "source": "keyword-fallback"
-}
+        return {"priority": priority, "softwareImpact": impact, "summary": title, "keyChanges": [], "publishedDate": None, "source": "keyword-fallback"}
 
 
 # ---------------------------------------------------------------------------
@@ -675,7 +650,7 @@ def send_email_alert(new_items, screenshots=None):
 # Main
 # ---------------------------------------------------------------------------
 def main():
-    print("=== SCRIPT VERSION: v10-simplified-priority-rules-full-refresh ===")
+    print("=== SCRIPT VERSION: v11-fix-view-details-and-dates ===")
 
     # Dedicated test mode — sends one fake item straight to send_email_alert(),
     # completely bypassing scraping. This is the reliable way to test the
@@ -781,10 +756,12 @@ def main():
         analysis = ai_analyze(item["title"], full_text)
         item["priority"] = analysis["priority"]
         item["softwareImpact"] = analysis["softwareImpact"]
-       item["summary"] = analysis["summary"]
-       item["keyChanges"] = analysis["keyChanges"]
-       item["actionRequired"] = analysis["actionRequired"]
-        print(f"  [debug] analyzed {item['title'][:50]!r}: priority={analysis['priority']}, softwareImpact={analysis['softwareImpact']}, via={analysis['source']}")
+        item["summary"] = analysis["summary"]
+        item["keyChanges"] = analysis["keyChanges"]
+        if analysis.get("publishedDate"):
+            item["date"] = analysis["publishedDate"]
+            item["effectiveDate"] = item.get("effectiveDate") or analysis["publishedDate"]
+        print(f"  [debug] analyzed {item['title'][:50]!r}: priority={analysis['priority']}, softwareImpact={analysis['softwareImpact']}, date={item['date']}, via={analysis['source']}")
 
     merged = existing + deduped
     save_data(merged)
