@@ -1,69 +1,22 @@
-# GST/CBIC Regulatory Dashboard — Fix Summary
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+selenium>=4.20.0
+pdfplumber>=0.11.0
 
-## Bugs fixed in this package
-
-1. **View Details opened the wrong item.**
-   `to_regulatory_update()` in the scraper never assigned an `id` to any
-   scraped item. Any dashboard that looks items up by id was matching
-   `undefined` for every item, so it always resolved to the same wrong
-   one. Fixed: ids are now assigned once, at merge time, guaranteed
-   unique, and never renumbered on later runs.
-
-2. **Wrong date shown (scrape date instead of notification date).**
-   The CBIC "What's New" scraping loop hardcoded `item_date=None` for
-   every item, silently falling back to today's scrape date — even
-   though most titles state the real date directly (e.g. "...Advisory
-   No. 11/2026 dated 24.06.2026..."). Fixed: it now runs the same
-   date-extraction logic already used elsewhere in the script.
-
-3. **Extraction picked up the wrong date in citation-style titles.**
-   Found while fixing #2: both the numeric and worded date regexes
-   could match a date belonging to a DIFFERENT, referenced document
-   (e.g. "Amendment to Circular No. 31/05/2018-GST, dated 9th February,
-   2018" — that date is when the OLD circular was issued, not this
-   amendment). Fixed: dates preceded by phrases like "amendment to",
-   "as per the", "in supersession of" etc. are no longer trusted as the
-   item's own date.
-
-4. **A whole department ("GST") was permanently invisible.**
-   `data.json` has items tagged `department: "GST"` (distinct from
-   "GSTN"), but the dashboard's `DEPARTMENTS` config — which the
-   department-toggle buttons and "select all" filter are both generated
-   from — never included it. Fixed: added to the config.
-
-5. **Default date window excluded valid recent items.**
-   Was a rolling "exactly 6 months back from today" window. Changed to
-   "1st of the month, 7 months back" — a cleaner, predictable boundary
-   that currently surfaces all 43 items in data.json, and will keep
-   rolling forward automatically as new items are added.
-
-## Files in this package
-
-- `dashboard.html` — the standalone dashboard, all 5 fixes applied.
-- `data.json` — your real data, backfilled: all 43 items now have
-  unique ids; no dates were force-corrected without solid evidence (see
-  caveat below).
-- `scrape_and_notify.py` — the scheduled scraper, with all fixes applied
-  so future runs don't reintroduce these bugs.
-- `requirements.txt`, `scrape.yml` — unchanged, included for a complete,
-  ready-to-deploy set.
-
-## Known limitation (not fixed, can't be from here)
-
-10 CBIC "Notification"-category items still show the scrape-run date
-because their real date isn't stated anywhere in the title text itself —
-only in the actual notification page/PDF, which needs a live fetch this
-environment can't make (no network access to cbic-gst.gov.in here).
-Once you deploy `scrape_and_notify.py` and the scheduled GitHub Action
-runs it, these should self-correct — especially if `ANTHROPIC_API_KEY`
-is set as a repo secret, since the AI analysis step reads full page/PDF
-text and extracts `publishedDate` as a second, more thorough pass.
-Worth checking whether that secret is actually configured.
-
-## Deploying
-
-Drop these files into your repo (matching the structure already used by
-`gst-dashboard-github.zip`): `dashboard.html`, `data.json`,
-`scrape_and_notify.py`, `requirements.txt`, and `.github/workflows/scrape.yml`.
-Commit and push — the next scheduled run (or a manual
-`workflow_dispatch`) will pick up the fixed scraper logic.
+# Email uses only Python's built-in smtplib/email modules — no extra
+# package needed. Sends via Brevo's free SMTP relay (300/day, no card,
+# no 2-Step Verification) instead of Gmail.
+#
+# selenium is needed for the GSTN Advisory & Releases scraper
+# (services.gst.gov.in), since that page is a JavaScript app — a plain
+# HTTP request can't read it. The GitHub Actions workflow installs a
+# matching Chrome browser automatically; nothing to install locally
+# unless you also want to run this script on your own machine.
+#
+# pdfplumber extracts real text from CBIC's PDF notifications, so the AI
+# analysis step can read the actual content instead of just the title.
+#
+# AI analysis (classify_notification + ai_analyze in scrape_and_notify.py)
+# calls the Claude API directly via `requests` — no extra SDK package
+# needed. Requires an ANTHROPIC_API_KEY secret to actually run; falls back
+# to a free keyword-based classifier if that secret isn't set.
