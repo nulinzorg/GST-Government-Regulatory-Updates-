@@ -647,8 +647,11 @@ function softwareImpactBadge(softwareImpact) {
   </span>`;
 }
 
+let LAST_RENDERED = []; // the exact list currently shown in the table, used to look up the right item for View Details
+
 function renderTable() {
   const filtered = getFilteredUpdates();
+  LAST_RENDERED = filtered;
   document.getElementById("count-label").textContent = `${filtered.length} of ${ALL_UPDATES.length} updates`;
 
   const container = document.getElementById("table-container");
@@ -660,7 +663,7 @@ function renderTable() {
     return;
   }
 
-  const rows = filtered.map(u => `
+  const rows = filtered.map((u, i) => `
     <tr class="data-row">
       <td>${fmtDate(u.date)}</td>
       <td>${deptSeal(u.department)}${u.department}</td>
@@ -673,14 +676,14 @@ function renderTable() {
           <button class="copy-btn" onclick="copyUrl('${u.source}', this)" title="Copy source URL">Copy</button>
         </div>
       </td>
-      <td><button class="view-btn" onclick="openDetail(${u.id})">View Details</button></td>
+      <td><button class="view-btn" onclick="openDetailByIndex(${i})">View Details</button></td>
     </tr>
   `).join("");
 
   container.innerHTML = `
     <table>
       <thead><tr>
-       <th>Notification Date</th><th>Department</th><th>Title</th><th>Summary</th><th>Priority</th><th>Source</th><th></th>
+        <th>Date</th><th>Department</th><th>Title</th><th>Summary</th><th>Priority</th><th>Source</th><th></th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -690,8 +693,8 @@ function renderTable() {
 // ---------------------------------------------------------------------------
 // Detail panel
 // ---------------------------------------------------------------------------
-function openDetail(id) {
-  const u = ALL_UPDATES.find(x => x.id === id);
+function openDetailByIndex(index) {
+  const u = LAST_RENDERED[index];
   if (!u) return;
   const panel = document.getElementById("panel");
   const overlay = document.getElementById("overlay");
@@ -710,7 +713,7 @@ function openDetail(id) {
       <p class="panel-title">${u.title}</p>
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
         ${priorityBadge(u.priority)}${softwareImpactBadge(u.softwareImpact)}
-        <span style="font-size:12px; color:var(--text-muted);">Notification Date: ${fmtDate(u.date)}</span>
+        <span style="font-size:12px; color:var(--text-muted);">Published ${fmtDate(u.date)}</span>
       </div>
       <h3>Summary</h3>
       <p>${u.summary}</p>
