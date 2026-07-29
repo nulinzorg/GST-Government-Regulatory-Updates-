@@ -639,5 +639,50 @@
     "date": "2026-07-29",
     "_needsReview": true,
     "id": 44
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Advisory on Re-Computation of Interest under Table 5.1 of GSTR-3B",
+    "summary": "Advisory on Re-Computation of Interest under Table 5.1 of GSTR-3B",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/657",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-29",
+    "_needsReview": true,
+    "id": 45
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Pre-deposit Percentage in the GST Portal",
+    "summary": "Pre-deposit Percentage in the GST Portal",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/656",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-29",
+    "_needsReview": true,
+    "id": 46
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Subject: Difficulty in filing appeals on the GST portal in cases where adjudication orders reflect \"NIL\" demand due to prior voluntary payment – reg.",
+    "summary": "Subject: Difficulty in filing appeals on the GST portal in cases where adjudication orders reflect \"NIL\" demand due to prior voluntary payment – reg.",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/655",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-29",
+    "_needsReview": true,
+    "id": 47
   }
 ]
