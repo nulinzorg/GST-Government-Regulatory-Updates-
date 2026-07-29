@@ -624,5 +624,20 @@
     "date": "2026-07-13",
     "_needsReview": true,
     "id": 43
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Advisory on Keeping on Hold the Proposed e-Way Bill Enhancements",
+    "summary": "Advisory on Keeping on Hold the Proposed e-Way Bill Enhancements",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/668",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-07-29",
+    "_needsReview": true,
+    "id": 44
   }
 ]
