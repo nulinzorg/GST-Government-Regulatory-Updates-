@@ -549,7 +549,21 @@ Based on the ACTUAL CONTENT above (not just the title), respond with ONLY a JSON
             "source": "ai",
         }
     except Exception as exc:  # noqa: BLE001 — AI analysis is an enhancement, never a hard dependency
-        print(f"  [debug] AI analysis failed for {title[:50]!r}, falling back to keywords: {exc}")
+        # BUG FIX: this used to log only str(exc), which for a raise_for_status()
+        # HTTPError is just the status line (e.g. "400 Client Error: Bad Request
+        # for url: ...") — never the response body, which is where Anthropic's
+        # API actually explains what was wrong (bad key, no credits, malformed
+        # request, etc). Every failure looked identical in the logs regardless
+        # of cause. `resp` only exists if requests.post() itself succeeded, so
+        # guard with locals() rather than assuming it's bound.
+        detail = exc
+        resp_obj = locals().get("resp")
+        if resp_obj is not None:
+            try:
+                detail = f"{exc} — response body: {resp_obj.text[:500]}"
+            except Exception:  # noqa: BLE001 — best-effort; the original exc still gets logged
+                pass
+        print(f"  [debug] AI analysis failed for {title[:50]!r}, falling back to keywords: {detail}")
         priority, impact = classify_notification(title, full_text)
         fallback_date = extract_date_from_text(full_text) if full_text.strip() else None
         return {"priority": priority, "softwareImpact": impact, "summary": title, "keyChanges": [], "publishedDate": fallback_date, "source": "keyword-fallback"}
