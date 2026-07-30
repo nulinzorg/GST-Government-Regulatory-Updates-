@@ -481,10 +481,20 @@ def extract_pdf_text(url, max_chars=6000):
 # dependency on it.
 # ---------------------------------------------------------------------------
 def ai_analyze(title, full_text):
+    # BUG FIX: the keyword-fallback path (no ANTHROPIC_API_KEY, or the AI
+    # call failing) used to always return publishedDate=None, even when the
+    # full document text was already in hand and plainly stated a date
+    # (e.g. a PDF opening with "F.No. ... dated 24.06.2026"). That silently
+    # left the item on its scrape-date fallback forever, since nothing else
+    # ever re-checks a date once this function has been tried. Running the
+    # same regex extraction used for titles against the full text here means
+    # the real published date still gets picked up even when AI analysis
+    # isn't available for this item.
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key or not full_text.strip():
         priority, impact = classify_notification(title, full_text)
-        return {"priority": priority, "softwareImpact": impact, "summary": title, "keyChanges": [], "publishedDate": None, "source": "keyword-fallback"}
+        fallback_date = extract_date_from_text(full_text) if full_text.strip() else None
+        return {"priority": priority, "softwareImpact": impact, "summary": title, "keyChanges": [], "publishedDate": fallback_date, "source": "keyword-fallback"}
 
     prompt = f"""You are analyzing a GST/CBIC regulatory notification for an internal compliance dashboard used by a tax/accounting team.
 
@@ -541,7 +551,8 @@ Based on the ACTUAL CONTENT above (not just the title), respond with ONLY a JSON
     except Exception as exc:  # noqa: BLE001 — AI analysis is an enhancement, never a hard dependency
         print(f"  [debug] AI analysis failed for {title[:50]!r}, falling back to keywords: {exc}")
         priority, impact = classify_notification(title, full_text)
-        return {"priority": priority, "softwareImpact": impact, "summary": title, "keyChanges": [], "publishedDate": None, "source": "keyword-fallback"}
+        fallback_date = extract_date_from_text(full_text) if full_text.strip() else None
+        return {"priority": priority, "softwareImpact": impact, "summary": title, "keyChanges": [], "publishedDate": fallback_date, "source": "keyword-fallback"}
 
 
 # ---------------------------------------------------------------------------
@@ -689,6 +700,40 @@ def send_email_alert(new_items, screenshots=None):
         print(f"Email send failed: {exc}")
 
 
+def enrich_item_with_full_text(item, driver):
+    """Re-fetches an item's source (PDF or, for a JS-heavy page, a rendered
+    page via Selenium) and runs full-text analysis against it, updating the
+    item's priority/summary/keyChanges/date in place. Returns the driver
+    (lazily created on first use if a non-PDF source needs one), since a
+    single Chrome instance is shared across every item processed this way.
+    Used both for genuinely-new items (main()'s normal run) and for
+    REDATE_MODE, which re-runs this against already-saved items still
+    showing a scrape-date fallback instead of a real published date."""
+    source = item["source"]
+    try:
+        if source.lower().endswith(".pdf"):
+            full_text = extract_pdf_text(source)
+        else:
+            if driver is None:
+                driver = create_driver()
+            full_text = capture_page_text(driver, source)
+    except Exception as exc:  # noqa: BLE001 — a failed text capture just means keyword fallback
+        print(f"  [debug] could not capture full text for {source}: {exc}")
+        full_text = ""
+
+    analysis = ai_analyze(item["title"], full_text)
+    item["priority"] = analysis["priority"]
+    item["softwareImpact"] = analysis["softwareImpact"]
+    item["summary"] = analysis["summary"]
+    item["keyChanges"] = analysis["keyChanges"]
+    if analysis.get("publishedDate"):
+        item["date"] = analysis["publishedDate"]
+        item["effectiveDate"] = item.get("effectiveDate") or analysis["publishedDate"]
+        item["_needsReview"] = False
+    print(f"  [debug] analyzed {item['title'][:50]!r}: priority={analysis['priority']}, softwareImpact={analysis['softwareImpact']}, date={item['date']}, via={analysis['source']}")
+    return driver
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -738,6 +783,33 @@ def main():
             item["softwareImpact"] = impact
         save_data(existing_items)
         print(f"Reclassified {len(existing_items)} existing item(s), {changed} changed. data.json updated.")
+        return
+
+    # Re-date mode — backfills the real published date on existing items
+    # still stuck on their scrape-date fallback (flagged _needsReview at
+    # merge time, when neither the title regex nor AI analysis could find a
+    # stated date). Re-fetches each flagged item's actual source (PDF or
+    # rendered page) and re-runs full-text analysis against it, same as a
+    # genuinely-new item gets — the difference is this dashboard's "date"
+    # field showing the day the item was fetched rather than the day the
+    # advisory/notification was actually published, since that's the field
+    # dashboard.html labels "Published" and filters/sorts by.
+    if os.environ.get("REDATE_MODE") == "1":
+        print("=== REDATE MODE — backfilling real published dates on existing items flagged _needsReview, no new scraping ===")
+        existing_items = load_existing()
+        to_fix = [item for item in existing_items if item.get("_needsReview")]
+        print(f"{len(to_fix)} of {len(existing_items)} existing item(s) flagged _needsReview.")
+        driver = None
+        fixed = 0
+        for item in to_fix:
+            driver = enrich_item_with_full_text(item, driver)
+            if not item.get("_needsReview"):
+                fixed += 1
+        if driver:
+            driver.quit()
+        save_data(existing_items)
+        print(f"Backfilled a real published date for {fixed} of {len(to_fix)} flagged item(s). "
+              f"{len(to_fix) - fixed} still have no stated date in their source and remain on the scrape-date fallback. data.json updated.")
         return
 
     # Full refresh mode — genuinely erases and redownloads. Instead of
@@ -804,27 +876,7 @@ def main():
     # just what gets shown in the email. Falls back to the keyword
     # classifier per-item if ANTHROPIC_API_KEY isn't set or a call fails.
     for item in deduped:
-        source = item["source"]
-        try:
-            if source.lower().endswith(".pdf"):
-                full_text = extract_pdf_text(source)
-            else:
-                if driver is None:
-                    driver = create_driver()
-                full_text = capture_page_text(driver, source)
-        except Exception as exc:  # noqa: BLE001 — a failed text capture just means keyword fallback
-            print(f"  [debug] could not capture full text for {source}: {exc}")
-            full_text = ""
-
-        analysis = ai_analyze(item["title"], full_text)
-        item["priority"] = analysis["priority"]
-        item["softwareImpact"] = analysis["softwareImpact"]
-        item["summary"] = analysis["summary"]
-        item["keyChanges"] = analysis["keyChanges"]
-        if analysis.get("publishedDate"):
-            item["date"] = analysis["publishedDate"]
-            item["effectiveDate"] = item.get("effectiveDate") or analysis["publishedDate"]
-        print(f"  [debug] analyzed {item['title'][:50]!r}: priority={analysis['priority']}, softwareImpact={analysis['softwareImpact']}, date={item['date']}, via={analysis['source']}")
+        driver = enrich_item_with_full_text(item, driver)
 
     merged = existing + deduped
     save_data(merged)
