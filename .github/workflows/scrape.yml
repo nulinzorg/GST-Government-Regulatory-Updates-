@@ -15,6 +15,10 @@ on:
         description: "One-time: backfill priority/softwareImpact on existing items (no scraping)"
         type: boolean
         default: false
+      redate:
+        description: "One-time: backfill real published dates on existing items still showing the scrape date (no new scraping)"
+        type: boolean
+        default: false
       full_refresh:
         description: "Erase and redownload everything fresh from CBIC/GSTN (replaces data.json entirely, does not merge)"
         type: boolean
@@ -47,6 +51,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TEST_EMAIL_MODE: ${{ (github.event.inputs.test_email == 'true') && '1' || '0' }}
           RECLASSIFY_MODE: ${{ (github.event.inputs.reclassify == 'true') && '1' || '0' }}
+          REDATE_MODE: ${{ (github.event.inputs.redate == 'true') && '1' || '0' }}
           FULL_REFRESH_MODE: ${{ (github.event.inputs.full_refresh == 'true') && '1' || '0' }}
         run: python scrape_and_notify.py
 
