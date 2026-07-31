@@ -121,6 +121,47 @@ def extract_date_from_text(text):
     return None
 
 
+# GSTN's advisory list shows the date in its own element next to the title
+# (not embedded in a sentence like CBIC's "...dated DD.MM.YYYY"), so there's
+# no "dated" lead-in to anchor on and no citation to worry about — the text
+# IS the date. Supports both numeric (29-07-2026, 29/07/2026) and worded
+# (29th July, 2026 / Jul 29, 2026) styles, since which one the real page
+# uses hasn't been confirmed (see the disclaimer on scrape_gstn_advisories).
+MONTH_LOOKUP = dict(MONTH_NAMES)
+for _name, _num in MONTH_NAMES.items():
+    MONTH_LOOKUP.setdefault(_name[:3], _num)
+_MONTH_PATTERN = "|".join(sorted(MONTH_LOOKUP, key=len, reverse=True))
+BARE_NUMERIC_DATE_RE = re.compile(r"\b(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})\b")
+BARE_WORDED_DATE_DMY_RE = re.compile(
+    r"(\d{1,2})(?:st|nd|rd|th)?[\s,-]+(" + _MONTH_PATTERN + r")\.?[\s,]+(\d{4})",
+    re.IGNORECASE,
+)
+BARE_WORDED_DATE_MDY_RE = re.compile(
+    r"(" + _MONTH_PATTERN + r")\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})",
+    re.IGNORECASE,
+)
+
+
+def parse_bare_date_text(text):
+    """Parses a standalone date string with no anchor word — e.g. the text
+    of GSTN's own date element next to each advisory title. Returns an ISO
+    date string, or None if nothing recognizable is found."""
+    if not text:
+        return None
+    numeric_match = BARE_NUMERIC_DATE_RE.search(text)
+    if numeric_match:
+        return parse_dd_mm_yyyy(numeric_match)
+    dmy_match = BARE_WORDED_DATE_DMY_RE.search(text)
+    if dmy_match:
+        dd, month_name, yyyy = dmy_match.groups()
+        return f"{yyyy}-{MONTH_LOOKUP[month_name.lower()]:02d}-{int(dd):02d}"
+    mdy_match = BARE_WORDED_DATE_MDY_RE.search(text)
+    if mdy_match:
+        month_name, dd, yyyy = mdy_match.groups()
+        return f"{yyyy}-{MONTH_LOOKUP[month_name.lower()]:02d}-{int(dd):02d}"
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Priority & accounting-software-impact classification
 # ---------------------------------------------------------------------------
@@ -385,6 +426,20 @@ def scrape_gstn_advisories(driver):
             if not title or len(title.split()) < 3:
                 continue
 
+            # Grab the date BEFORE clicking — the click navigates to the
+            # detail page and invalidates this element reference. Per the
+            # confirmed structure noted above, the date lives in the <p>
+            # with "news-item" and "date" in its class that immediately
+            # follows this header in document order.
+            try:
+                date_el = header_el.find_element(
+                    By.XPATH,
+                    "following::p[contains(@class, 'news-item') and contains(@class, 'date')][1]"
+                )
+                item_date = parse_bare_date_text(date_el.text.strip())
+            except Exception:
+                item_date = None
+
             # Click the header itself (or its nearest clickable ancestor)
             clickable = header_el
             try:
@@ -400,7 +455,7 @@ def scrape_gstn_advisories(driver):
             if "advisoryandreleases" in real_url and real_url != GSTN_ADVISORY_URL:
                 items.append(to_regulatory_update(
                     title=title, href=real_url, dept="GSTN", category="Notification",
-                    priority="Medium", item_date=None, needs_review=True,
+                    priority="Medium", item_date=item_date, needs_review=item_date is None,
                 ))
             driver.back()
             time.sleep(3)
