@@ -568,5 +568,20 @@
     "date": "2026-09-01",
     "_needsReview": true,
     "id": 38
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Enabling Filing of Appeals in Cases Involving NIL or Zero Demand Amount – reg.",
+    "summary": "Enabling Filing of Appeals in Cases Involving NIL or Zero Demand Amount – reg.",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/671",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-09-07",
+    "_needsReview": true,
+    "id": 39
   }
 ]
