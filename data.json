@@ -583,5 +583,20 @@
     "date": "2026-09-07",
     "_needsReview": true,
     "id": 39
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Advisory on use of version 3.3 of emSigner",
+    "summary": "Advisory on use of version 3.3 of emSigner",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/672",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-09-19",
+    "_needsReview": true,
+    "id": 40
   }
 ]
