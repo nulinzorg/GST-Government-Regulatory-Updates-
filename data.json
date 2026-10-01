@@ -613,5 +613,20 @@
     "date": "2026-10-01",
     "_needsReview": true,
     "id": 41
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Advisory on “Multistate Registration” Facility for GST Registration",
+    "summary": "Advisory on “Multistate Registration” Facility for GST Registration",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/674",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-10-01",
+    "_needsReview": true,
+    "id": 42
   }
 ]
