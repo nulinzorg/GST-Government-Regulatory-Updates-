@@ -598,5 +598,20 @@
     "date": "2026-09-19",
     "_needsReview": true,
     "id": 40
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Gross and Net GST revenue collections for the month of September, 2026",
+    "summary": "Gross and Net GST revenue collections for the month of September, 2026",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/673",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-10-01",
+    "_needsReview": true,
+    "id": 41
   }
 ]
