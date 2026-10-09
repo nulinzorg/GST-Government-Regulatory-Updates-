@@ -628,5 +628,20 @@
     "date": "2026-10-01",
     "_needsReview": true,
     "id": 42
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Recommendations of the 57th GST Council Meeting – Key Reforms",
+    "summary": "Recommendations of the 57th GST Council Meeting – Key Reforms",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/675",
+    "keyChanges": [],
+    "effectiveDate": null,
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-10-09",
+    "_needsReview": true,
+    "id": 43
   }
 ]
