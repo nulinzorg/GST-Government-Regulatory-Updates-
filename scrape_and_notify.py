@@ -43,6 +43,8 @@ SUBSCRIBERS_FILE = ROOT / "subscribers.json"
 
 CBIC_HOME = "https://cbic-gst.gov.in/"
 GSTN_ADVISORY_URL = "https://services.gst.gov.in/services/advisory/advisoryandreleases"
+NIC_EINVOICE_ANNOUNCEMENTS_URL = "https://einv-apisandbox.nic.in/announcements.html"
+NIC_EWAYBILL_ANNOUNCEMENTS_URL = "https://docs.ewaybillgst.gov.in/apidocs/announcements.html"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; GSTDashboardBot/1.0; internal, non-commercial use)"}
 ADVISORY_DATE_RE = re.compile(r"dated\s+(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})", re.IGNORECASE)
 
@@ -467,6 +469,97 @@ def scrape_gstn_advisories(driver):
     return items
 
 
+# ---------------------------------------------------------------------------
+# NIC e-Invoice (einv-apisandbox.nic.in) and NIC e-Way Bill
+# (docs.ewaybillgst.gov.in) "Announcements" pages — plain server-rendered
+# API-docs sites, not JS-heavy apps like services.gst.gov.in, so a normal
+# requests.get() (like scrape_cbic above) should work without needing
+# Selenium.
+#
+# UNVERIFIED: this sandbox's network policy blocks both hosts outright
+# (confirmed — a direct request gets a 403 from the egress proxy before it
+# even reaches the host), so the markup below has never been inspected
+# against the live pages. This is a best-effort first pass with generic
+# table/list parsing and heavy debug output, meant to be refined against
+# real output from the GitHub Actions run (which does have real internet
+# access) — the same iterative process the comments on
+# scrape_gstn_advisories above describe for that scraper.
+def scrape_nic_announcements(url, dept):
+    items = []
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=20)
+        resp.raise_for_status()
+    except Exception as exc:  # noqa: BLE001 — this source is best-effort
+        print(f"  [debug] {dept}: request to {url} failed: {exc}")
+        return items
+    print(f"  [debug] {dept}: HTTP {resp.status_code}, {len(resp.text)} chars")
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    MAX_ITEMS = 20  # cap to keep this best-effort source from flooding the feed
+
+    def is_code_like(text):
+        # Skip API-docs noise (curl examples, endpoint signatures, JSON
+        # snippets) that could otherwise look like a dated row/line.
+        return bool(re.search(r"\bcurl\b|[{}]|^(GET|POST|PUT|DELETE)\s+/", text, re.IGNORECASE))
+
+    # Pass 1: table rows — common for a changelog/announcement table, one
+    # row per entry with a date cell and a title/description cell.
+    rows = soup.find_all("tr")
+    print(f"  [debug] {dept}: <tr> rows found: {len(rows)}")
+    for row in rows:
+        if len(items) >= MAX_ITEMS:
+            break
+        cells = row.find_all(["td", "th"])
+        if len(cells) < 2:
+            continue
+        row_text = row.get_text(" ", strip=True)
+        if is_code_like(row_text):
+            continue
+        item_date = parse_bare_date_text(row_text) or extract_date_from_text(row_text)
+        if item_date is None:
+            continue  # not a dated row — likely a header row or unrelated table
+        title = max((c.get_text(" ", strip=True) for c in cells), key=len, default="")
+        if not title or len(title.split()) < 3:
+            continue
+        link = row.find("a", href=True)
+        href = urljoin(url, link["href"]) if link else url
+        items.append(to_regulatory_update(
+            title=title, href=href, dept=dept, category="Notification",
+            priority="Medium", item_date=item_date, needs_review=False,
+        ))
+
+    if items:
+        print(f"  [debug] {dept}: {len(items)} item(s) parsed from table rows")
+        return items
+
+    # Pass 2 (fallback, if no table matched): list items / divs / paragraphs
+    # — one per announcement, each with a date-shaped substring near a
+    # title. Broader and noisier, so it's only tried when pass 1 found
+    # nothing.
+    candidates = soup.find_all(["li", "div", "p"])
+    print(f"  [debug] {dept}: pass 2 fallback — scanning {len(candidates)} <li>/<div>/<p> candidates")
+    seen_text = set()
+    for el in candidates:
+        if len(items) >= MAX_ITEMS:
+            break
+        text = el.get_text(" ", strip=True)
+        if not text or text in seen_text or len(text) > 300 or is_code_like(text):
+            continue
+        item_date = parse_bare_date_text(text) or extract_date_from_text(text)
+        if item_date is None or len(text.split()) < 3:
+            continue
+        seen_text.add(text)
+        link = el.find("a", href=True)
+        href = urljoin(url, link["href"]) if link else url
+        items.append(to_regulatory_update(
+            title=text[:200], href=href, dept=dept, category="Notification",
+            priority="Medium", item_date=item_date, needs_review=False,
+        ))
+
+    print(f"  [debug] {dept}: {len(items)} item(s) total after fallback pass")
+    return items
+
+
 def create_driver():
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
@@ -830,6 +923,24 @@ def main():
         new_items += gstn_items
     except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
         print(f"GSTN Advisory scrape failed (CBIC results above are unaffected): {exc}")
+
+    # NIC e-Invoice and e-Way Bill "Announcements" pages — plain requests.get(),
+    # no Selenium needed. Each isolated in its own try/except, same reasoning
+    # as the GSTN block above: a broken/unverified source must never take
+    # down the other scrapers.
+    try:
+        einvoice_items = scrape_nic_announcements(NIC_EINVOICE_ANNOUNCEMENTS_URL, "NIC e-Invoice")
+        print(f"NIC e-Invoice: found {len(einvoice_items)} item(s) on the page.")
+        new_items += einvoice_items
+    except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
+        print(f"NIC e-Invoice scrape failed (other sources above are unaffected): {exc}")
+
+    try:
+        ewaybill_items = scrape_nic_announcements(NIC_EWAYBILL_ANNOUNCEMENTS_URL, "NIC e-Way Bill")
+        print(f"NIC e-Way Bill: found {len(ewaybill_items)} item(s) on the page.")
+        new_items += ewaybill_items
+    except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
+        print(f"NIC e-Way Bill scrape failed (other sources above are unaffected): {exc}")
 
     deduped = [item for item in new_items if item["source"] not in existing_sources]
 
