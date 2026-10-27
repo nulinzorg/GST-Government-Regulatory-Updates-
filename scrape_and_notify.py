@@ -634,12 +634,22 @@ def scrape_nic_announcements(url, dept, driver=None):
     return items
 
 
-def create_driver():
+def create_driver(headless=True):
+    # headless=False exists for fetch_nic_updates_local.py: a real person
+    # confirmed docs.ewaybillgst.gov.in loads fine in their own normal
+    # Edge/Chrome, but a headless Selenium-driven Chrome gets Akamai's
+    # "Access Denied" edge block every time (2026-10-27) — so the block is
+    # about headless/automation fingerprinting, not IP reputation as
+    # originally assumed. A visible, non-headless browser window is the
+    # fix, which only makes sense on a real desktop (local machine), never
+    # on a headless CI runner — GSTN scraping on GitHub Actions keeps the
+    # default headless=True.
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
 
     options = Options()
-    options.add_argument("--headless=new")
+    if headless:
+        options.add_argument("--headless=new")
     options.add_argument("--window-size=1024,700")
     return webdriver.Chrome(options=options)
 

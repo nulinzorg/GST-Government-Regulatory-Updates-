@@ -109,7 +109,13 @@ def main():
 
     driver = None
     try:
-        driver = create_driver()
+        # headless=False: confirmed 2026-10-27 that docs.ewaybillgst.gov.in
+        # loads fine in a normal browser but Akamai blocks a headless
+        # Selenium-driven Chrome every time — a visible window is the
+        # actual fix, not just a fallback. This will briefly pop up a real
+        # Chrome window while the script runs; that's expected and fine
+        # for an interactive/scheduled run on your own desktop.
+        driver = create_driver(headless=False)
     except Exception as exc:  # noqa: BLE001 — fall back to requests-only if Chrome isn't set up locally
         print(f"Could not start a local Chrome driver ({exc}); e-Way Bill will fall back to requests.get(), which may not be enough on its own.")
 
