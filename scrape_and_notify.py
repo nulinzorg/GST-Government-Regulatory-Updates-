@@ -484,10 +484,26 @@ def scrape_gstn_advisories(driver):
 # real output from the GitHub Actions run (which does have real internet
 # access) — the same iterative process the comments on
 # scrape_gstn_advisories above describe for that scraper.
+#
+# RUN #40488977246 (2026-10-27) findings: NIC e-Way Bill returned a 403
+# with our custom "GSTDashboardBot/1.0" User-Agent — CBIC's own scraper
+# uses the same header fine, so this looks like a WAF/bot-detection rule
+# specific to this host, not a general block. Switched to a standard
+# browser User-Agent for these two requests only (CBIC's working header
+# is left untouched). NIC e-Invoice timed out at the TCP level entirely —
+# that's not a header problem; see the comment on its call site in main().
+NIC_BROWSER_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+    )
+}
+
+
 def scrape_nic_announcements(url, dept):
     items = []
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=20)
+        resp = requests.get(url, headers=NIC_BROWSER_HEADERS, timeout=20)
         resp.raise_for_status()
     except Exception as exc:  # noqa: BLE001 — this source is best-effort
         print(f"  [debug] {dept}: request to {url} failed: {exc}")
@@ -928,6 +944,16 @@ def main():
     # no Selenium needed. Each isolated in its own try/except, same reasoning
     # as the GSTN block above: a broken/unverified source must never take
     # down the other scrapers.
+    #
+    # NIC e-Invoice (einv-apisandbox.nic.in) timed out at the TCP level in
+    # run #40488977246 (2026-10-27) — the GitHub Actions runner's IP got no
+    # response at all, not even a rejection. "apisandbox" subdomains on NIC
+    # infrastructure are commonly locked to registered/allowlisted IPs
+    # (meant for GSPs/ASPs under a developer agreement), so this may simply
+    # never be reachable from a shared CI runner's IP — unlike a header
+    # fix, there's no code-level workaround for that. Left wired in (the
+    # try/except makes a persistent failure harmless) in case the host
+    # becomes reachable, opens public access, or the runner IP changes.
     try:
         einvoice_items = scrape_nic_announcements(NIC_EINVOICE_ANNOUNCEMENTS_URL, "NIC e-Invoice")
         print(f"NIC e-Invoice: found {len(einvoice_items)} item(s) on the page.")
