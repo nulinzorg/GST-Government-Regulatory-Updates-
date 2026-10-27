@@ -485,20 +485,33 @@ def scrape_gstn_advisories(driver):
 # access) — the same iterative process the comments on
 # scrape_gstn_advisories above describe for that scraper.
 #
-# RUN #40488977246 (2026-10-27) findings: NIC e-Way Bill returned a 403
-# with our custom "GSTDashboardBot/1.0" User-Agent — CBIC's own scraper
-# uses the same header fine, so this looked like a WAF/bot-detection rule
-# specific to this host. Tried a standard browser User-Agent in run
-# #40489458962 (same day) — still a 403, so a header-only check wasn't it;
-# this is more likely TLS-fingerprint or JS-challenge based bot detection
-# (Cloudflare/Akamai-style), which a plain `requests` call structurally
-# can't pass. Falls back to driver (the same shared Selenium/Chrome
-# instance already running for GSTN) when one is given, since a real
-# browser can clear that kind of check; `requests` stays as the default
-# for a host that doesn't need it. NIC e-Invoice timed out at the TCP
-# level entirely in both runs so far — that's a different failure (no
-# response at all, not a block after connecting) that neither a header
-# nor a browser fixes; see the comment on its call site in main().
+# CONCLUSIVE FINDING as of run #40490252420 (2026-10-27): both sources are
+# blocked at the network/IP level from a GitHub Actions runner, not by
+# anything a scraper can work around:
+#   - NIC e-Way Bill (docs.ewaybillgst.gov.in): a custom User-Agent got a
+#     403 (run #40488977246); a standard browser UA still got a 403 (run
+#     #40489458962); routing through the real Selenium/Chrome driver
+#     (which the GSTN scraper uses successfully against a *different*
+#     JS-heavy site) got back a literal Akamai edge block page —
+#     "Access Denied ... https://errors.edgesuite.net/..." — meaning
+#     Akamai's CDN/WAF is rejecting the request before it ever reaches the
+#     real site. This is almost certainly an IP-reputation block (GitHub
+#     Actions runners use well-known datacenter IP ranges that enterprise
+#     WAFs commonly blocklist), which no header, wait, or browser swap can
+#     fix from this runner.
+#   - NIC e-Invoice (einv-apisandbox.nic.in): times out at the TCP level in
+#     every run so far — no response at all, not even a rejection. Typical
+#     of IP-allowlisting on a developer "sandbox" subdomain (meant for
+#     registered GSPs/ASPs with static IPs), which is the same class of
+#     problem — the runner's IP simply isn't allowed to reach the host.
+#
+# Left both wired in (each isolated in its own try/except in main(), so a
+# persistent failure stays harmless) in case either host's access policy
+# changes. driver is still accepted/used for e-Way Bill on the chance a
+# future run behaves differently, but don't expect a code change alone to
+# fix this — it would need a different egress IP (e.g. a non-datacenter
+# proxy) or legitimate access (e.g. a registered sandbox API key), neither
+# of which this scraper can arrange for itself.
 NIC_BROWSER_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
