@@ -564,6 +564,18 @@ def scrape_nic_announcements(url, dept, driver=None):
         # snippets) that could otherwise look like a dated row/line.
         return bool(re.search(r"\bcurl\b|[{}]|^(GET|POST|PUT|DELETE)\s+/", text, re.IGNORECASE))
 
+    # RUN on a real machine (2026-10-27, NIC e-Invoice): the real page
+    # isn't a <table> (pass 1 found 0 rows), and pass 2's generic element
+    # scan picked up a separate "Date : DD/MM/YYYY" label element as its
+    # own fake "item" distinct from the real description sitting in a
+    # sibling element — 7 of 10 results were just that label with nothing
+    # else. Reject anything that's ONLY a short label plus a date, since a
+    # genuine announcement always has real description text alongside it.
+    DATE_ONLY_LABEL_RE = re.compile(r"^[a-z\s]{0,20}:?\s*\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\.?$", re.IGNORECASE)
+
+    def is_date_label_only(text):
+        return bool(DATE_ONLY_LABEL_RE.match(text.strip()))
+
     # Pass 1: table rows — common for a changelog/announcement table, one
     # row per entry with a date cell and a title/description cell.
     rows = soup.find_all("tr")
@@ -575,7 +587,7 @@ def scrape_nic_announcements(url, dept, driver=None):
         if len(cells) < 2:
             continue
         row_text = row.get_text(" ", strip=True)
-        if is_code_like(row_text):
+        if is_code_like(row_text) or is_date_label_only(row_text):
             continue
         item_date = parse_bare_date_text(row_text) or extract_date_from_text(row_text)
         if item_date is None:
@@ -605,7 +617,7 @@ def scrape_nic_announcements(url, dept, driver=None):
         if len(items) >= MAX_ITEMS:
             break
         text = el.get_text(" ", strip=True)
-        if not text or text in seen_text or len(text) > 300 or is_code_like(text):
+        if not text or text in seen_text or len(text) > 300 or is_code_like(text) or is_date_label_only(text):
             continue
         item_date = parse_bare_date_text(text) or extract_date_from_text(text)
         if item_date is None or len(text.split()) < 3:
