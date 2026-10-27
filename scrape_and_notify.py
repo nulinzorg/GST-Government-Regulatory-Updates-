@@ -43,6 +43,8 @@ SUBSCRIBERS_FILE = ROOT / "subscribers.json"
 
 CBIC_HOME = "https://cbic-gst.gov.in/"
 GSTN_ADVISORY_URL = "https://services.gst.gov.in/services/advisory/advisoryandreleases"
+NIC_EINVOICE_ANNOUNCEMENTS_URL = "https://einv-apisandbox.nic.in/announcements.html"
+NIC_EWAYBILL_ANNOUNCEMENTS_URL = "https://docs.ewaybillgst.gov.in/apidocs/announcements.html"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; GSTDashboardBot/1.0; internal, non-commercial use)"}
 ADVISORY_DATE_RE = re.compile(r"dated\s+(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})", re.IGNORECASE)
 
@@ -118,6 +120,47 @@ def extract_date_from_text(text):
     worded_match = WORDED_DATE_RE.search(text)
     if worded_match and not is_citation_date(text, worded_match.start()):
         return parse_worded_date(worded_match)
+    return None
+
+
+# GSTN's advisory list shows the date in its own element next to the title
+# (not embedded in a sentence like CBIC's "...dated DD.MM.YYYY"), so there's
+# no "dated" lead-in to anchor on and no citation to worry about — the text
+# IS the date. Supports both numeric (29-07-2026, 29/07/2026) and worded
+# (29th July, 2026 / Jul 29, 2026) styles, since which one the real page
+# uses hasn't been confirmed (see the disclaimer on scrape_gstn_advisories).
+MONTH_LOOKUP = dict(MONTH_NAMES)
+for _name, _num in MONTH_NAMES.items():
+    MONTH_LOOKUP.setdefault(_name[:3], _num)
+_MONTH_PATTERN = "|".join(sorted(MONTH_LOOKUP, key=len, reverse=True))
+BARE_NUMERIC_DATE_RE = re.compile(r"\b(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})\b")
+BARE_WORDED_DATE_DMY_RE = re.compile(
+    r"(\d{1,2})(?:st|nd|rd|th)?[\s,-]+(" + _MONTH_PATTERN + r")\.?[\s,]+(\d{4})",
+    re.IGNORECASE,
+)
+BARE_WORDED_DATE_MDY_RE = re.compile(
+    r"(" + _MONTH_PATTERN + r")\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})",
+    re.IGNORECASE,
+)
+
+
+def parse_bare_date_text(text):
+    """Parses a standalone date string with no anchor word — e.g. the text
+    of GSTN's own date element next to each advisory title. Returns an ISO
+    date string, or None if nothing recognizable is found."""
+    if not text:
+        return None
+    numeric_match = BARE_NUMERIC_DATE_RE.search(text)
+    if numeric_match:
+        return parse_dd_mm_yyyy(numeric_match)
+    dmy_match = BARE_WORDED_DATE_DMY_RE.search(text)
+    if dmy_match:
+        dd, month_name, yyyy = dmy_match.groups()
+        return f"{yyyy}-{MONTH_LOOKUP[month_name.lower()]:02d}-{int(dd):02d}"
+    mdy_match = BARE_WORDED_DATE_MDY_RE.search(text)
+    if mdy_match:
+        month_name, dd, yyyy = mdy_match.groups()
+        return f"{yyyy}-{MONTH_LOOKUP[month_name.lower()]:02d}-{int(dd):02d}"
     return None
 
 
@@ -385,6 +428,20 @@ def scrape_gstn_advisories(driver):
             if not title or len(title.split()) < 3:
                 continue
 
+            # Grab the date BEFORE clicking — the click navigates to the
+            # detail page and invalidates this element reference. Per the
+            # confirmed structure noted above, the date lives in the <p>
+            # with "news-item" and "date" in its class that immediately
+            # follows this header in document order.
+            try:
+                date_el = header_el.find_element(
+                    By.XPATH,
+                    "following::p[contains(@class, 'news-item') and contains(@class, 'date')][1]"
+                )
+                item_date = parse_bare_date_text(date_el.text.strip())
+            except Exception:
+                item_date = None
+
             # Click the header itself (or its nearest clickable ancestor)
             clickable = header_el
             try:
@@ -400,7 +457,7 @@ def scrape_gstn_advisories(driver):
             if "advisoryandreleases" in real_url and real_url != GSTN_ADVISORY_URL:
                 items.append(to_regulatory_update(
                     title=title, href=real_url, dept="GSTN", category="Notification",
-                    priority="Medium", item_date=None, needs_review=True,
+                    priority="Medium", item_date=item_date, needs_review=item_date is None,
                 ))
             driver.back()
             time.sleep(3)
@@ -409,6 +466,159 @@ def scrape_gstn_advisories(driver):
             continue
 
     print(f"  [debug] items captured with real URLs: {len(items)}")
+    return items
+
+
+# ---------------------------------------------------------------------------
+# NIC e-Invoice (einv-apisandbox.nic.in) and NIC e-Way Bill
+# (docs.ewaybillgst.gov.in) "Announcements" pages — plain server-rendered
+# API-docs sites, not JS-heavy apps like services.gst.gov.in, so a normal
+# requests.get() (like scrape_cbic above) should work without needing
+# Selenium.
+#
+# UNVERIFIED: this sandbox's network policy blocks both hosts outright
+# (confirmed — a direct request gets a 403 from the egress proxy before it
+# even reaches the host), so the markup below has never been inspected
+# against the live pages. This is a best-effort first pass with generic
+# table/list parsing and heavy debug output, meant to be refined against
+# real output from the GitHub Actions run (which does have real internet
+# access) — the same iterative process the comments on
+# scrape_gstn_advisories above describe for that scraper.
+#
+# CONCLUSIVE FINDING as of run #40490252420 (2026-10-27): both sources are
+# blocked at the network/IP level from a GitHub Actions runner, not by
+# anything a scraper can work around:
+#   - NIC e-Way Bill (docs.ewaybillgst.gov.in): a custom User-Agent got a
+#     403 (run #40488977246); a standard browser UA still got a 403 (run
+#     #40489458962); routing through the real Selenium/Chrome driver
+#     (which the GSTN scraper uses successfully against a *different*
+#     JS-heavy site) got back a literal Akamai edge block page —
+#     "Access Denied ... https://errors.edgesuite.net/..." — meaning
+#     Akamai's CDN/WAF is rejecting the request before it ever reaches the
+#     real site. This is almost certainly an IP-reputation block (GitHub
+#     Actions runners use well-known datacenter IP ranges that enterprise
+#     WAFs commonly blocklist), which no header, wait, or browser swap can
+#     fix from this runner.
+#   - NIC e-Invoice (einv-apisandbox.nic.in): times out at the TCP level in
+#     every run so far — no response at all, not even a rejection. Typical
+#     of IP-allowlisting on a developer "sandbox" subdomain (meant for
+#     registered GSPs/ASPs with static IPs), which is the same class of
+#     problem — the runner's IP simply isn't allowed to reach the host.
+#
+# Confirmed in run #40494313095 that this is a whole-domain block, not a
+# block on just the announcements page: release-notes.html on both hosts
+# failed identically (same Akamai "Access Denied" for e-Way Bill, same TCP
+# timeout for e-Invoice) — no path on either host is reachable from here.
+#
+# Left both wired in (each isolated in its own try/except in main(), so a
+# persistent failure stays harmless) in case either host's access policy
+# changes. driver is still accepted/used for e-Way Bill on the chance a
+# future run behaves differently, but don't expect a code change alone to
+# fix this — it would need a different egress IP (e.g. a non-datacenter
+# proxy) or legitimate access (e.g. a registered sandbox API key), neither
+# of which this scraper can arrange for itself.
+NIC_BROWSER_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+    )
+}
+
+
+def scrape_nic_announcements(url, dept, driver=None):
+    items = []
+    if driver is not None:
+        try:
+            driver.get(url)
+            # RUN #40489841940 (2026-10-27): a 4s wait got only 327 chars of
+            # page_source — far too little for a real page, and consistent
+            # with a JS-app shell (React/Vue/Docusaurus-style doc site) that
+            # hadn't finished rendering yet, the same class of issue
+            # scrape_gstn_advisories had to work around for services.gst.gov.in.
+            # Longer wait, plus logging the page title and an HTML snippet so
+            # the next run's debug output says definitively what's actually
+            # being served (still-loading shell vs. something else entirely,
+            # e.g. a captcha/interstitial) instead of guessing again blind.
+            time.sleep(8)
+            html = driver.page_source
+            print(f"  [debug] {dept}: loaded via Selenium, {len(html)} chars, title={driver.title!r}")
+            print(f"  [debug] {dept}: html snippet: {html[:500]!r}")
+        except Exception as exc:  # noqa: BLE001 — this source is best-effort
+            print(f"  [debug] {dept}: Selenium load of {url} failed: {exc}")
+            return items
+    else:
+        try:
+            resp = requests.get(url, headers=NIC_BROWSER_HEADERS, timeout=20)
+            resp.raise_for_status()
+            html = resp.text
+        except Exception as exc:  # noqa: BLE001 — this source is best-effort
+            print(f"  [debug] {dept}: request to {url} failed: {exc}")
+            return items
+        print(f"  [debug] {dept}: HTTP {resp.status_code}, {len(html)} chars")
+    soup = BeautifulSoup(html, "html.parser")
+
+    MAX_ITEMS = 20  # cap to keep this best-effort source from flooding the feed
+
+    def is_code_like(text):
+        # Skip API-docs noise (curl examples, endpoint signatures, JSON
+        # snippets) that could otherwise look like a dated row/line.
+        return bool(re.search(r"\bcurl\b|[{}]|^(GET|POST|PUT|DELETE)\s+/", text, re.IGNORECASE))
+
+    # Pass 1: table rows — common for a changelog/announcement table, one
+    # row per entry with a date cell and a title/description cell.
+    rows = soup.find_all("tr")
+    print(f"  [debug] {dept}: <tr> rows found: {len(rows)}")
+    for row in rows:
+        if len(items) >= MAX_ITEMS:
+            break
+        cells = row.find_all(["td", "th"])
+        if len(cells) < 2:
+            continue
+        row_text = row.get_text(" ", strip=True)
+        if is_code_like(row_text):
+            continue
+        item_date = parse_bare_date_text(row_text) or extract_date_from_text(row_text)
+        if item_date is None:
+            continue  # not a dated row — likely a header row or unrelated table
+        title = max((c.get_text(" ", strip=True) for c in cells), key=len, default="")
+        if not title or len(title.split()) < 3:
+            continue
+        link = row.find("a", href=True)
+        href = urljoin(url, link["href"]) if link else url
+        items.append(to_regulatory_update(
+            title=title, href=href, dept=dept, category="Notification",
+            priority="Medium", item_date=item_date, needs_review=False,
+        ))
+
+    if items:
+        print(f"  [debug] {dept}: {len(items)} item(s) parsed from table rows")
+        return items
+
+    # Pass 2 (fallback, if no table matched): list items / divs / paragraphs
+    # — one per announcement, each with a date-shaped substring near a
+    # title. Broader and noisier, so it's only tried when pass 1 found
+    # nothing.
+    candidates = soup.find_all(["li", "div", "p"])
+    print(f"  [debug] {dept}: pass 2 fallback — scanning {len(candidates)} <li>/<div>/<p> candidates")
+    seen_text = set()
+    for el in candidates:
+        if len(items) >= MAX_ITEMS:
+            break
+        text = el.get_text(" ", strip=True)
+        if not text or text in seen_text or len(text) > 300 or is_code_like(text):
+            continue
+        item_date = parse_bare_date_text(text) or extract_date_from_text(text)
+        if item_date is None or len(text.split()) < 3:
+            continue
+        seen_text.add(text)
+        link = el.find("a", href=True)
+        href = urljoin(url, link["href"]) if link else url
+        items.append(to_regulatory_update(
+            title=text[:200], href=href, dept=dept, category="Notification",
+            priority="Medium", item_date=item_date, needs_review=False,
+        ))
+
+    print(f"  [debug] {dept}: {len(items)} item(s) total after fallback pass")
     return items
 
 
@@ -775,6 +985,39 @@ def main():
         new_items += gstn_items
     except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
         print(f"GSTN Advisory scrape failed (CBIC results above are unaffected): {exc}")
+
+    # NIC e-Invoice and e-Way Bill "Announcements" pages — plain requests.get(),
+    # no Selenium needed. Each isolated in its own try/except, same reasoning
+    # as the GSTN block above: a broken/unverified source must never take
+    # down the other scrapers.
+    #
+    # NIC e-Invoice (einv-apisandbox.nic.in) timed out at the TCP level in
+    # run #40488977246 (2026-10-27) — the GitHub Actions runner's IP got no
+    # response at all, not even a rejection. "apisandbox" subdomains on NIC
+    # infrastructure are commonly locked to registered/allowlisted IPs
+    # (meant for GSPs/ASPs under a developer agreement), so this may simply
+    # never be reachable from a shared CI runner's IP — unlike a header
+    # fix, there's no code-level workaround for that. Left wired in (the
+    # try/except makes a persistent failure harmless) in case the host
+    # becomes reachable, opens public access, or the runner IP changes.
+    try:
+        einvoice_items = scrape_nic_announcements(NIC_EINVOICE_ANNOUNCEMENTS_URL, "NIC e-Invoice")
+        print(f"NIC e-Invoice: found {len(einvoice_items)} item(s) on the page.")
+        new_items += einvoice_items
+    except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
+        print(f"NIC e-Invoice scrape failed (other sources above are unaffected): {exc}")
+
+    # Routed through the shared GSTN Selenium driver (when it's up) rather
+    # than requests — a plain requests.get() got a 403 even with a standard
+    # browser User-Agent (run #40489458962), so this is more likely
+    # TLS-fingerprint/JS-challenge bot detection that only a real browser
+    # can clear. Falls back to requests if the driver never came up.
+    try:
+        ewaybill_items = scrape_nic_announcements(NIC_EWAYBILL_ANNOUNCEMENTS_URL, "NIC e-Way Bill", driver=driver)
+        print(f"NIC e-Way Bill: found {len(ewaybill_items)} item(s) on the page.")
+        new_items += ewaybill_items
+    except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
+        print(f"NIC e-Way Bill scrape failed (other sources above are unaffected): {exc}")
 
     deduped = [item for item in new_items if item["source"] not in existing_sources]
 
