@@ -1014,6 +1014,31 @@ def main():
     except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
         print(f"NIC e-Way Bill scrape failed (other sources above are unaffected): {exc}")
 
+    # TEMPORARY DIAGNOSTIC — checking whether the "release-notes" pages (as
+    # opposed to "announcements") are reachable at all, same block theory
+    # under test. Purely informational: doesn't touch new_items/deduped, so
+    # it can't affect data.json or trigger an email either way. Safe to
+    # delete once this question is answered.
+    print("  [debug] --- release-notes.html diagnostic probe (not added to data.json) ---")
+    try:
+        probe_resp = requests.get(
+            "https://einv-apisandbox.nic.in/release-notes.html", headers=NIC_BROWSER_HEADERS, timeout=20
+        )
+        print(f"  [debug] NIC e-Invoice release-notes: HTTP {probe_resp.status_code}, {len(probe_resp.text)} chars")
+    except Exception as exc:  # noqa: BLE001 — diagnostic only
+        print(f"  [debug] NIC e-Invoice release-notes: request failed: {exc}")
+    try:
+        if driver is not None:
+            driver.get("https://docs.ewaybillgst.gov.in/apidocs/release-notes.html")
+            time.sleep(8)
+            probe_html = driver.page_source
+            print(f"  [debug] NIC e-Way Bill release-notes: loaded via Selenium, {len(probe_html)} chars, title={driver.title!r}")
+            print(f"  [debug] NIC e-Way Bill release-notes: html snippet: {probe_html[:500]!r}")
+        else:
+            print("  [debug] NIC e-Way Bill release-notes: skipped, no driver available")
+    except Exception as exc:  # noqa: BLE001 — diagnostic only
+        print(f"  [debug] NIC e-Way Bill release-notes: Selenium load failed: {exc}")
+
     deduped = [item for item in new_items if item["source"] not in existing_sources]
 
     # BUG FIX: backfill ids on any pre-existing items that predate this fix
