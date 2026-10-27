@@ -758,23 +758,31 @@ Based on the ACTUAL CONTENT above (not just the title), respond with ONLY a JSON
 # Data persistence
 # ---------------------------------------------------------------------------
 def load_existing():
+    # BUG FIX: read_text() with no encoding uses the OS default (e.g.
+    # Windows' cp1252 locale codepage, not UTF-8) — data.json has non-ASCII
+    # characters in it (em dashes, curly quotes, etc., since save_data()
+    # below writes with ensure_ascii=False), so loading it on a Windows
+    # machine raised UnicodeDecodeError before this file was ever even
+    # reached. The GitHub Actions runner (Linux, UTF-8 locale) masked this
+    # for years of hourly runs. Explicit encoding="utf-8" makes this work
+    # the same on every OS.
     if DATA_FILE.exists():
         try:
-            return json.loads(DATA_FILE.read_text())
+            return json.loads(DATA_FILE.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             return []
     return []
 
 
 def save_data(items):
-    DATA_FILE.write_text(json.dumps(items, indent=2, ensure_ascii=False))
+    DATA_FILE.write_text(json.dumps(items, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def load_subscribers():
     if not SUBSCRIBERS_FILE.exists():
         return []
     try:
-        return json.loads(SUBSCRIBERS_FILE.read_text()).get("emails", [])
+        return json.loads(SUBSCRIBERS_FILE.read_text(encoding="utf-8")).get("emails", [])
     except json.JSONDecodeError:
         return []
 
