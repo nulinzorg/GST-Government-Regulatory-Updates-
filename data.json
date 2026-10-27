@@ -778,5 +778,50 @@
     "date": "2026-10-16",
     "_needsReview": true,
     "id": 52
+  },
+  {
+    "department": "NIC e-Invoice",
+    "category": "Notification",
+    "title": "As per the notification dated 22 December 2020,  No. 94 /2020. the validity period of e-waybill is changed from 100 KM per day to 200 KM per day.",
+    "summary": "As per the notification dated 22 December 2020,  No. 94 /2020. the validity period of e-waybill is changed from 100 KM per day to 200 KM per day.",
+    "priority": "Low",
+    "softwareImpact": false,
+    "source": "https://einv-apisandbox.nic.in/announcements.html",
+    "keyChanges": [],
+    "effectiveDate": "2020-12-22",
+    "actionRequired": "Review the source document for details.",
+    "date": "2020-12-22",
+    "_needsReview": false,
+    "id": 53
+  },
+  {
+    "department": "NIC e-Invoice",
+    "category": "Notification",
+    "title": "Release Notes dated 21/11/2020 has been updated on 27/11/2020 with Info Details provided in the response. Please see the release notes for more details.",
+    "summary": "Release Notes dated 21/11/2020 has been updated on 27/11/2020 with Info Details provided in the response. Please see the release notes for more details.",
+    "priority": "Low",
+    "softwareImpact": false,
+    "source": "https://einv-apisandbox.nic.in/announcements.html",
+    "keyChanges": [],
+    "effectiveDate": "2020-11-21",
+    "actionRequired": "Review the source document for details.",
+    "date": "2020-11-21",
+    "_needsReview": false,
+    "id": 54
+  },
+  {
+    "department": "NIC e-Invoice",
+    "category": "Notification",
+    "title": "From 1st Jan 2020, the tax payers with annual turnover of Rs. 500 Crore and above, in their previous financial year, will be allowed to get the access to the API credentials. Other tax payers may get",
+    "summary": "From 1st Jan 2020, the tax payers with annual turnover of Rs. 500 Crore and above, in their previous financial year, will be allowed to get the access to the API credentials. Other tax payers may get",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://einv-apisandbox.nic.in/announcements.html",
+    "keyChanges": [],
+    "effectiveDate": "2020-01-01",
+    "actionRequired": "Review the source document for details.",
+    "date": "2020-01-01",
+    "_needsReview": false,
+    "id": 55
   }
 ]
