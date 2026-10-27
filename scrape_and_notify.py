@@ -512,9 +512,19 @@ def scrape_nic_announcements(url, dept, driver=None):
     if driver is not None:
         try:
             driver.get(url)
-            time.sleep(4)
+            # RUN #40489841940 (2026-10-27): a 4s wait got only 327 chars of
+            # page_source — far too little for a real page, and consistent
+            # with a JS-app shell (React/Vue/Docusaurus-style doc site) that
+            # hadn't finished rendering yet, the same class of issue
+            # scrape_gstn_advisories had to work around for services.gst.gov.in.
+            # Longer wait, plus logging the page title and an HTML snippet so
+            # the next run's debug output says definitively what's actually
+            # being served (still-loading shell vs. something else entirely,
+            # e.g. a captcha/interstitial) instead of guessing again blind.
+            time.sleep(8)
             html = driver.page_source
-            print(f"  [debug] {dept}: loaded via Selenium, {len(html)} chars")
+            print(f"  [debug] {dept}: loaded via Selenium, {len(html)} chars, title={driver.title!r}")
+            print(f"  [debug] {dept}: html snippet: {html[:500]!r}")
         except Exception as exc:  # noqa: BLE001 — this source is best-effort
             print(f"  [debug] {dept}: Selenium load of {url} failed: {exc}")
             return items
