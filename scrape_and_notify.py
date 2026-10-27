@@ -487,11 +487,18 @@ def scrape_gstn_advisories(driver):
 #
 # RUN #40488977246 (2026-10-27) findings: NIC e-Way Bill returned a 403
 # with our custom "GSTDashboardBot/1.0" User-Agent — CBIC's own scraper
-# uses the same header fine, so this looks like a WAF/bot-detection rule
-# specific to this host, not a general block. Switched to a standard
-# browser User-Agent for these two requests only (CBIC's working header
-# is left untouched). NIC e-Invoice timed out at the TCP level entirely —
-# that's not a header problem; see the comment on its call site in main().
+# uses the same header fine, so this looked like a WAF/bot-detection rule
+# specific to this host. Tried a standard browser User-Agent in run
+# #40489458962 (same day) — still a 403, so a header-only check wasn't it;
+# this is more likely TLS-fingerprint or JS-challenge based bot detection
+# (Cloudflare/Akamai-style), which a plain `requests` call structurally
+# can't pass. Falls back to driver (the same shared Selenium/Chrome
+# instance already running for GSTN) when one is given, since a real
+# browser can clear that kind of check; `requests` stays as the default
+# for a host that doesn't need it. NIC e-Invoice timed out at the TCP
+# level entirely in both runs so far — that's a different failure (no
+# response at all, not a block after connecting) that neither a header
+# nor a browser fixes; see the comment on its call site in main().
 NIC_BROWSER_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -500,16 +507,27 @@ NIC_BROWSER_HEADERS = {
 }
 
 
-def scrape_nic_announcements(url, dept):
+def scrape_nic_announcements(url, dept, driver=None):
     items = []
-    try:
-        resp = requests.get(url, headers=NIC_BROWSER_HEADERS, timeout=20)
-        resp.raise_for_status()
-    except Exception as exc:  # noqa: BLE001 — this source is best-effort
-        print(f"  [debug] {dept}: request to {url} failed: {exc}")
-        return items
-    print(f"  [debug] {dept}: HTTP {resp.status_code}, {len(resp.text)} chars")
-    soup = BeautifulSoup(resp.text, "html.parser")
+    if driver is not None:
+        try:
+            driver.get(url)
+            time.sleep(4)
+            html = driver.page_source
+            print(f"  [debug] {dept}: loaded via Selenium, {len(html)} chars")
+        except Exception as exc:  # noqa: BLE001 — this source is best-effort
+            print(f"  [debug] {dept}: Selenium load of {url} failed: {exc}")
+            return items
+    else:
+        try:
+            resp = requests.get(url, headers=NIC_BROWSER_HEADERS, timeout=20)
+            resp.raise_for_status()
+            html = resp.text
+        except Exception as exc:  # noqa: BLE001 — this source is best-effort
+            print(f"  [debug] {dept}: request to {url} failed: {exc}")
+            return items
+        print(f"  [debug] {dept}: HTTP {resp.status_code}, {len(html)} chars")
+    soup = BeautifulSoup(html, "html.parser")
 
     MAX_ITEMS = 20  # cap to keep this best-effort source from flooding the feed
 
@@ -961,8 +979,13 @@ def main():
     except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
         print(f"NIC e-Invoice scrape failed (other sources above are unaffected): {exc}")
 
+    # Routed through the shared GSTN Selenium driver (when it's up) rather
+    # than requests — a plain requests.get() got a 403 even with a standard
+    # browser User-Agent (run #40489458962), so this is more likely
+    # TLS-fingerprint/JS-challenge bot detection that only a real browser
+    # can clear. Falls back to requests if the driver never came up.
     try:
-        ewaybill_items = scrape_nic_announcements(NIC_EWAYBILL_ANNOUNCEMENTS_URL, "NIC e-Way Bill")
+        ewaybill_items = scrape_nic_announcements(NIC_EWAYBILL_ANNOUNCEMENTS_URL, "NIC e-Way Bill", driver=driver)
         print(f"NIC e-Way Bill: found {len(ewaybill_items)} item(s) on the page.")
         new_items += ewaybill_items
     except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
