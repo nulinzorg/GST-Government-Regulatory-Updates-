@@ -431,14 +431,20 @@ const SEED_UPDATES = [
 // State
 // ---------------------------------------------------------------------------
 let ALL_UPDATES = [];
-// Default the dashboard to "1st of the month, 7 months back" on load —
-// e.g. on 15 Jul 2026 this resolves to 1 Dec 2025. Anchoring to the 1st
-// of a month (rather than a rolling day-for-day window) gives a cleaner,
-// predictable boundary and currently covers the full dataset.
-function sevenMonthsAgoFirstOfMonthStr() {
+// Default the dashboard to "1 Jan of the current year" on load — e.g. on
+// 27 Oct 2026 this resolves to 2026-01-01. Changed from a rolling
+// "7 months back" window: once NIC e-Way Bill/e-Invoice scraping started
+// pulling in real announcement dates going back to 2019, that rolling
+// window silently hid everything older than ~7 months (including NIC
+// items dated this year, since "7 months back" from late October still
+// only reaches back to ~March) behind the date filter with no visual cue
+// why. "This year" is a simpler, predictable rule: recent/current
+// updates show by default, and older items (most of which are
+// historical API release notes, not actionable advisories) require
+// clearing the filter on purpose.
+function thisYearStartStr() {
   const d = new Date();
-  d.setDate(1); // pin to the 1st before subtracting months, so month math never skips/rolls oddly
-  d.setMonth(d.getMonth() - 7);
+  d.setMonth(0, 1); // 1 Jan of the current year
   return d.toISOString().slice(0, 10);
 }
 
@@ -447,7 +453,7 @@ function sevenMonthsAgoFirstOfMonthStr() {
 // include them.
 const DEFAULT_DEPARTMENTS = ["GSTN", "NIC e-Way Bill", "NIC e-Invoice"];
 
-let filters = { departments: [...DEFAULT_DEPARTMENTS], category: "", priority: "", dateFrom: sevenMonthsAgoFirstOfMonthStr(), dateTo: todayStr() };
+let filters = { departments: [...DEFAULT_DEPARTMENTS], category: "", priority: "", dateFrom: thisYearStartStr(), dateTo: todayStr() };
 let query = "";
 
 function todayStr() {
@@ -530,7 +536,7 @@ function renderCards() {
     // disabled the active/highlighted state for every card except "Total
     // Updates Today" (the one whose own check doesn't depend on this).
     // Compare against the actual default window instead of emptiness.
-    const noRange = filters.dateFrom === sevenMonthsAgoFirstOfMonthStr() && filters.dateTo === todayStr();
+    const noRange = filters.dateFrom === thisYearStartStr() && filters.dateTo === todayStr();
     if (c.type === "date") return filters.dateFrom === c.filterValue && filters.dateTo === c.filterValue && allSelected && !filters.category && !filters.priority;
     if (c.type === "priority") return filters.priority === c.filterValue && allSelected && !filters.category && noRange;
     if (c.type === "category") return filters.category === c.filterValue && allSelected && !filters.priority && noRange;
@@ -569,9 +575,9 @@ function handleCardClick(c) {
     (c.type === "department" && filters.departments.length === 1 && filters.departments[0] === c.filterValue);
 
   if (isCurrentlyActive) {
-    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sevenMonthsAgoFirstOfMonthStr(), dateTo: todayStr() };
+    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: thisYearStartStr(), dateTo: todayStr() };
   } else {
-    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sevenMonthsAgoFirstOfMonthStr(), dateTo: todayStr() };
+    filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: thisYearStartStr(), dateTo: todayStr() };
     if (c.type === "date") { filters.dateFrom = c.filterValue; filters.dateTo = c.filterValue; }
     if (c.type === "priority") filters.priority = c.filterValue;
     if (c.type === "category") filters.category = c.filterValue;
@@ -632,7 +638,7 @@ document.getElementById("priority-filter").addEventListener("change", e => { fil
 document.getElementById("date-from").addEventListener("change", e => { filters.dateFrom = e.target.value; render(); });
 document.getElementById("date-to").addEventListener("change", e => { filters.dateTo = e.target.value; render(); });
 document.getElementById("clear-filters").addEventListener("click", () => {
-  filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: sevenMonthsAgoFirstOfMonthStr(), dateTo: todayStr() };
+  filters = { departments: Object.keys(DEPARTMENTS), category: "", priority: "", dateFrom: thisYearStartStr(), dateTo: todayStr() };
   render();
 });
 document.getElementById("search").addEventListener("input", e => { query = e.target.value; render(); });
