@@ -732,7 +732,18 @@ def scrape_cbic_tax_information(driver):
         if date_match:
             rest = rest[date_match.end():].strip()
         title = re.sub(r"^[\s:.\-]+", "", rest)
-        title = re.sub(r"\s*(English|Hindi|हिंदी)\s*$", "", title).strip()
+        # BUG FIX: the real footer is "English हिन्दी" together (both
+        # language links), not a single trailing word — confirmed in
+        # run #40641199910 (2026-10-28), where this produced the SAME
+        # notification twice with different leftover text ("...2026."
+        # vs "...2026. English हिन्दी"), since only one trailing token got
+        # stripped and "हिन्दी" doesn't even match "हिंदी" (different
+        # Unicode sequence — anusvara vs virama+न — easy to get wrong by
+        # hand, impossible to notice without seeing the real page's exact
+        # bytes). Splitting on "English" and keeping only what's BEFORE it
+        # is robust regardless of exactly which language links follow,
+        # since "English" is consistently the first one shown.
+        title = re.split(r"\bEnglish\b", title)[0].strip()
         # A real single card's description is well under this; a much
         # longer "title" means this candidate was actually an ANCESTOR
         # wrapping multiple cards (its own text starts with the first
