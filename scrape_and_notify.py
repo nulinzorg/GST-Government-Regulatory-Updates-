@@ -1233,8 +1233,32 @@ def main():
     # data.json itself reflects the real classification and summary, not
     # just what gets shown in the email. Falls back to the keyword
     # classifier per-item if ANTHROPIC_API_KEY isn't set or a call fails.
+    #
+    # BUG FIX: when a best-effort scraper can't find a real per-item link,
+    # it falls back to its own bare listing-page URL (see
+    # scrape_cbic_tax_information / scrape_nic_announcements) as "source" —
+    # which is the SAME generic homepage for every such item, not that
+    # item's actual content. This loop used to re-fetch that URL via
+    # Selenium for each one anyway: run #40639859259 (2026-10-28) spent
+    # ~4.5 minutes doing exactly that for 8 CBIC Tax Information items that
+    # all shared one fallback URL, each re-fetch taking ~30s against an
+    # already-slow site, eventually tripping the job's 10-minute timeout.
+    # Skip the fetch entirely for a known bare-listing-page source — there
+    # was never anything item-specific to read there anyway — and go
+    # straight to keyword classification instead.
+    GENERIC_LISTING_URLS = {CBIC_TAX_INFO_URL, NIC_EINVOICE_ANNOUNCEMENTS_URL, NIC_EWAYBILL_ANNOUNCEMENTS_URL}
     for item in deduped:
         source = item["source"]
+        if source in GENERIC_LISTING_URLS:
+            print(f"  [debug] skipping full-text capture for {item['title'][:50]!r}: source is a generic listing-page fallback, not this item's own page")
+            full_text = ""
+            analysis = ai_analyze(item["title"], full_text)
+            item["priority"] = analysis["priority"]
+            item["softwareImpact"] = analysis["softwareImpact"]
+            item["summary"] = analysis["summary"]
+            item["keyChanges"] = analysis["keyChanges"]
+            print(f"  [debug] analyzed {item['title'][:50]!r}: priority={analysis['priority']}, softwareImpact={analysis['softwareImpact']}, date={item['date']}, via={analysis['source']}")
+            continue
         try:
             if source.lower().endswith(".pdf"):
                 full_text = extract_pdf_text(source)
@@ -1269,11 +1293,18 @@ def main():
         try:
             if driver is None:
                 driver = create_driver()
-            for item in deduped:
-                png = capture_screenshot(driver, item["source"])
+            # Dedupe by unique source URL, not per item — several items can
+            # share the same fallback listing-page URL (see the comment on
+            # GENERIC_LISTING_URLS above), and screenshots is keyed by URL
+            # anyway, so re-capturing the identical page once per item that
+            # happens to share it was pure wasted time against an
+            # already-slow site for no different result.
+            unique_sources = list(dict.fromkeys(item["source"] for item in deduped))
+            for source in unique_sources:
+                png = capture_screenshot(driver, source)
                 if png:
-                    screenshots[item["source"]] = png
-            print(f"  [debug] screenshots captured: {len(screenshots)} of {len(deduped)} new item(s)")
+                    screenshots[source] = png
+            print(f"  [debug] screenshots captured: {len(screenshots)} of {len(unique_sources)} unique source URL(s) ({len(deduped)} new item(s))")
         except Exception as exc:  # noqa: BLE001 — screenshots are a bonus, never critical
             print(f"  [debug] screenshot capture step failed: {exc}")
 
