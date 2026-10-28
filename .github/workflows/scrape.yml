@@ -26,6 +26,13 @@ permissions:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    # Safety net: without this, a genuine hang in the script (e.g. a slow
+    # site with no page-load timeout — see scrape_and_notify.py's
+    # create_driver()) could consume GitHub Actions' default 6-hour job
+    # timeout, blocking every subsequent hourly scheduled run until it's
+    # manually cancelled. Real runs finish in 2-3 minutes; 10 is generous
+    # headroom.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +48,17 @@ jobs:
 
       - name: Scrape and notify
         env:
+          # BUG FIX: without this, Python fully-buffers stdout when it
+          # isn't a TTY (true of GitHub Actions' captured output), so
+          # print() calls don't appear in the log until the process exits
+          # or the buffer fills — discovered while debugging a suspected
+          # hang (runs #40638557616/#40639231211, 2026-10-28): the log
+          # showed literally zero script output, including the very first
+          # print() line, right up to cancellation, making it impossible
+          # to tell where execution actually was. PYTHONUNBUFFERED makes
+          # every print() flush immediately, so the log reflects real
+          # progress instead of appearing all at once at the end.
+          PYTHONUNBUFFERED: "1"
           BREVO_SMTP_LOGIN: ${{ secrets.BREVO_SMTP_LOGIN }}
           BREVO_SMTP_KEY: ${{ secrets.BREVO_SMTP_KEY }}
           BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
