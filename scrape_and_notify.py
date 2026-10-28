@@ -45,6 +45,7 @@ CBIC_HOME = "https://cbic-gst.gov.in/"
 GSTN_ADVISORY_URL = "https://services.gst.gov.in/services/advisory/advisoryandreleases"
 NIC_EINVOICE_ANNOUNCEMENTS_URL = "https://einv-apisandbox.nic.in/announcements.html"
 NIC_EWAYBILL_ANNOUNCEMENTS_URL = "https://docs.ewaybillgst.gov.in/apidocs/announcements.html"
+CBIC_TAX_INFO_URL = "https://taxinformation.cbic.gov.in/"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; GSTDashboardBot/1.0; internal, non-commercial use)"}
 ADVISORY_DATE_RE = re.compile(r"dated\s+(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})", re.IGNORECASE)
 
@@ -135,7 +136,10 @@ for _name, _num in MONTH_NAMES.items():
 _MONTH_PATTERN = "|".join(sorted(MONTH_LOOKUP, key=len, reverse=True))
 BARE_NUMERIC_DATE_RE = re.compile(r"\b(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})\b")
 BARE_WORDED_DATE_DMY_RE = re.compile(
-    r"(\d{1,2})(?:st|nd|rd|th)?[\s,-]+(" + _MONTH_PATTERN + r")\.?[\s,]+(\d{4})",
+    # [\s,-]+ after the month too (not just after the day): the CBIC tax
+    # information portal (taxinformation.cbic.gov.in) formats its dates as
+    # "26-Oct-2026" — a literal hyphen on both sides, not a space/comma.
+    r"(\d{1,2})(?:st|nd|rd|th)?[\s,-]+(" + _MONTH_PATTERN + r")\.?[\s,-]+(\d{4})",
     re.IGNORECASE,
 )
 BARE_WORDED_DATE_MDY_RE = re.compile(
@@ -634,6 +638,131 @@ def scrape_nic_announcements(url, dept, driver=None):
     return items
 
 
+# ---------------------------------------------------------------------------
+# CBIC Tax Information portal (taxinformation.cbic.gov.in) — a React/Angular
+# style site with tabs (Latest Updates / GST / Customs / Central Excise /
+# Service Tax) and a card per Notification/Circular. UNVERIFIED: this
+# sandbox blocks the whole taxinformation.cbic.gov.in host (confirmed via a
+# 403 from the egress proxy and a DNS failure through a fetch agent), same
+# as every other *.gov.in / *.nic.in host — the card markup below is a
+# best-effort guess from a user-provided screenshot of the rendered page,
+# not the real DOM, so this needs the same "push, run via GitHub Actions,
+# read the debug output, refine" cycle scrape_gstn_advisories and
+# scrape_nic_announcements were both developed with.
+#
+# Per the screenshot, each card reads like:
+#   "Notification" / "26-Oct-2026" / "05/2026-Central Tax-Seeks to notify
+#   the Central Goods and Services Tax (Amendment) Rules 2026." / "English"
+# — a type label, then a date, then the real description, then a language
+# footer. Rather than depend on exact element nesting (which we can't see),
+# this parses that structure out of each candidate element's full text via
+# regex, so it still works whether a label+date+description live in one
+# element or three nested ones (duplicate nested matches collapse via the
+# (label, date, title) in `seen` check below).
+CBIC_TAX_INFO_TYPE_LABEL_RE = re.compile(r"^(Notification|Circular|Order|Instruction|Trade Notice)\b", re.IGNORECASE)
+EWAYBILL_KEYWORD_RE = re.compile(r"e[\s-]?way[\s-]?bill", re.IGNORECASE)
+EINVOICE_KEYWORD_RE = re.compile(r"e[\s-]?invoic", re.IGNORECASE)
+
+
+def classify_gst_subtopic(text):
+    """Per the user's request: segregate GST-tab notifications further by
+    what they're actually about, not just that they're tagged "GST" on the
+    source site. e-Way Bill/e-Invoice mentions route into the SAME
+    department buckets the dedicated NIC scrapers already use, so related
+    items from any source end up grouped together on the dashboard;
+    everything else recognized as a genuine Notification/Circular stays
+    "GST"; anything that didn't even match a known type label (see
+    CBIC_TAX_INFO_TYPE_LABEL_RE) falls through to "Other" at the call site
+    below, not here."""
+    if EWAYBILL_KEYWORD_RE.search(text):
+        return "NIC e-Way Bill"
+    if EINVOICE_KEYWORD_RE.search(text):
+        return "NIC e-Invoice"
+    return "GST"
+
+
+def scrape_cbic_tax_information(driver):
+    items = []
+    if driver is None:
+        print("  [debug] CBIC Tax Information: no Selenium driver available, skipping (this site needs JS rendering)")
+        return items
+
+    from selenium.webdriver.common.by import By
+
+    driver.get(CBIC_TAX_INFO_URL)
+    time.sleep(6)
+    print(f"  [debug] CBIC Tax Information: page title={driver.title!r}")
+
+    # Make sure the GST tab is selected — the user's screenshot showed this
+    # page defaults to (or can show) "Latest Updates" across all tax types;
+    # we only want the GST-filtered list specifically.
+    try:
+        gst_tab = driver.find_element(By.XPATH, "//*[normalize-space(text())='GST']")
+        gst_tab.click()
+        time.sleep(4)
+    except Exception as exc:  # noqa: BLE001 — best-effort; scrape whatever is already shown if this fails
+        print(f"  [debug] CBIC Tax Information: could not click the GST tab ({exc}); scraping whatever is currently displayed")
+
+    soup = BeautifulSoup(driver.page_source, "html.parser")
+    MAX_ITEMS = 20
+    seen = set()
+    candidates = soup.find_all(["div", "article", "li"])
+    print(f"  [debug] CBIC Tax Information: scanning {len(candidates)} candidate elements")
+
+    for el in candidates:
+        if len(items) >= MAX_ITEMS:
+            break
+        text = el.get_text(" ", strip=True)
+        if not text or len(text) > 600:
+            continue
+        label_match = CBIC_TAX_INFO_TYPE_LABEL_RE.match(text)
+        if not label_match:
+            continue
+        item_date = parse_bare_date_text(text)
+        if item_date is None:
+            continue
+
+        category_label = label_match.group(1).title()
+        rest = text[label_match.end():].strip()
+        date_match = BARE_WORDED_DATE_DMY_RE.search(rest) or BARE_NUMERIC_DATE_RE.search(rest)
+        if date_match:
+            rest = rest[date_match.end():].strip()
+        title = re.sub(r"^[\s:.\-]+", "", rest)
+        title = re.sub(r"\s*(English|Hindi|हिंदी)\s*$", "", title).strip()
+        # A real single card's description is well under this; a much
+        # longer "title" means this candidate was actually an ANCESTOR
+        # wrapping multiple cards (its own text starts with the first
+        # card's label, same as a real card, so the type/date checks above
+        # don't catch it) — reject it rather than file a bogus item whose
+        # "title" is several cards' text concatenated together, possibly
+        # classified by a LATER card's keywords it has nothing to do with.
+        if not title or len(title.split()) < 3 or len(title) > 300:
+            continue
+
+        key = (category_label, item_date, title)
+        if key in seen:
+            continue
+        seen.add(key)
+
+        link = el.find("a", href=True)
+        href = urljoin(CBIC_TAX_INFO_URL, link["href"]) if link else CBIC_TAX_INFO_URL
+        # "Other" is reserved for a recognized-but-unexpected type label
+        # (Order/Instruction/Trade Notice) rather than the common case —
+        # most of what's on the GST tab is Notification/Circular, which
+        # route through the EWB/e-Invoice/GST split in classify_gst_subtopic.
+        if category_label.lower() in ("notification", "circular"):
+            dept = classify_gst_subtopic(title)
+        else:
+            dept = "Other"
+        items.append(to_regulatory_update(
+            title=title, href=href, dept=dept, category=category_label,
+            priority="Medium", item_date=item_date, needs_review=False,
+        ))
+
+    print(f"  [debug] CBIC Tax Information: {len(items)} item(s) parsed")
+    return items
+
+
 def create_driver(headless=True):
     # headless=False exists for fetch_nic_updates_local.py: a real person
     # confirmed docs.ewaybillgst.gov.in loads fine in their own normal
@@ -1015,6 +1144,17 @@ def main():
         new_items += gstn_items
     except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
         print(f"GSTN Advisory scrape failed (CBIC results above are unaffected): {exc}")
+
+    # CBIC Tax Information portal (GST tab) — reuses the same shared
+    # Selenium driver as GSTN above. Isolated in its own try/except for the
+    # same reason: unverified/best-effort, must never take down anything
+    # else.
+    try:
+        tax_info_items = scrape_cbic_tax_information(driver)
+        print(f"CBIC Tax Information: found {len(tax_info_items)} item(s) on the page.")
+        new_items += tax_info_items
+    except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
+        print(f"CBIC Tax Information scrape failed (other sources above are unaffected): {exc}")
 
     # NIC e-Invoice and e-Way Bill "Announcements" pages — plain requests.get(),
     # no Selenium needed. Each isolated in its own try/except, same reasoning

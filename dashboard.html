@@ -277,6 +277,13 @@ const DEPARTMENTS = {
   // Object.keys(DEPARTMENTS), any item with this department could never
   // be shown, no matter which toggles were active.
   "GST": { initials: "GST", color: "#1E3A5F" },
+  // Added alongside the CBIC Tax Information portal scraper: items whose
+  // type label isn't a recognized Notification/Circular fall back to this
+  // department. Same bug as the "GST" fix above — an item tagged with a
+  // department absent from this object can never be shown, since the
+  // toggle buttons and "select all" are both generated from
+  // Object.keys(DEPARTMENTS).
+  "Other": { initials: "OTH", color: "#6B7280" },
 };
 const CATEGORIES = ["Notification", "Circular", "Order", "Press Release", "FAQ", "Amendment"];
 const PRIORITIES = ["High", "Medium", "Low"];
