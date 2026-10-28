@@ -689,7 +689,11 @@ def scrape_cbic_tax_information(driver):
 
     from selenium.webdriver.common.by import By
 
-    driver.get(CBIC_TAX_INFO_URL)
+    try:
+        driver.get(CBIC_TAX_INFO_URL)
+    except Exception as exc:  # noqa: BLE001 — includes TimeoutException; this source is best-effort
+        print(f"  [debug] CBIC Tax Information: driver.get() failed/timed out ({exc})")
+        return items
     time.sleep(6)
     print(f"  [debug] CBIC Tax Information: page title={driver.title!r}")
 
@@ -780,7 +784,20 @@ def create_driver(headless=True):
     if headless:
         options.add_argument("--headless=new")
     options.add_argument("--window-size=1024,700")
-    return webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(options=options)
+    # BUG FIX: no page-load timeout was ever set, so a single slow or
+    # unresponsive site could hang driver.get() indefinitely — observed
+    # directly (run #40638557616, 2026-10-28): scrape_cbic_tax_information's
+    # very first driver.get() stalled "Scrape and notify" past 5+ minutes
+    # (GSTN alone normally finishes the whole step in under 2) with no sign
+    # of ever returning, which would have blocked the hourly production
+    # pipeline for hours on its next real run. 45s is generous for every
+    # site this driver is used against (GSTN/CBIC Tax Info/e-Way Bill all
+    # normally load in seconds) while still bounding the worst case. A
+    # timeout here raises selenium.common.exceptions.TimeoutException,
+    # already caught by each call site's surrounding try/except in main().
+    driver.set_page_load_timeout(45)
+    return driver
 
 
 def capture_screenshot(driver, url):
