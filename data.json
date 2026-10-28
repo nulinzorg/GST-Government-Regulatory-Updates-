@@ -988,5 +988,20 @@
     "date": "2026-10-26",
     "_needsReview": false,
     "id": 66
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Advisory – Scheduled Maintenance of e-Invoice Services (31 October – 1 November 2026)",
+    "summary": "Advisory – Scheduled Maintenance of e-Invoice Services (31 October – 1 November 2026)",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/679",
+    "keyChanges": [],
+    "effectiveDate": "2026-10-28",
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-10-28",
+    "_needsReview": false,
+    "id": 67
   }
 ]
