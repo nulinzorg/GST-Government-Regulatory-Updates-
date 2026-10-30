@@ -1267,12 +1267,13 @@ def main():
     except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
         print(f"CBIC Tax Information scrape failed (other sources above are unaffected): {exc}")
 
-    # PIB (Press Information Bureau), Ministry of Finance, GST-relevant only
-    # — plain requests.get() by default (no driver passed), same reasoning
-    # as scrape_cbic() above: looks like a classic server-rendered page, not
-    # an SPA, so try the cheap path first.
+    # PIB (Press Information Bureau), Ministry of Finance, GST-relevant only.
+    # Run #41006324298 (2026-10-30) got a 403 from plain requests.get() —
+    # same WAF-style block NIC e-Way Bill originally had — so routing
+    # through the shared Selenium driver instead, same fix that worked
+    # there.
     try:
-        pib_items = scrape_pib_finance_gst()
+        pib_items = scrape_pib_finance_gst(driver=driver)
         print(f"PIB: found {len(pib_items)} item(s).")
         new_items += pib_items
     except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
