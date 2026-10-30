@@ -46,6 +46,7 @@ GSTN_ADVISORY_URL = "https://services.gst.gov.in/services/advisory/advisoryandre
 NIC_EINVOICE_ANNOUNCEMENTS_URL = "https://einv-apisandbox.nic.in/announcements.html"
 NIC_EWAYBILL_ANNOUNCEMENTS_URL = "https://docs.ewaybillgst.gov.in/apidocs/announcements.html"
 CBIC_TAX_INFO_URL = "https://taxinformation.cbic.gov.in/"
+PIB_URL = "https://www.pib.gov.in/index.aspx?reg=3&lang=1"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; GSTDashboardBot/1.0; internal, non-commercial use)"}
 ADVISORY_DATE_RE = re.compile(r"dated\s+(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})", re.IGNORECASE)
 
@@ -778,6 +779,88 @@ def scrape_cbic_tax_information(driver):
     return items
 
 
+# ---------------------------------------------------------------------------
+# PIB (Press Information Bureau) — pib.gov.in. Per the user's own screenshot
+# (2026-10-30), the "all releases" index page (no special GST filter exists
+# on the site itself) groups press releases under a heading per ministry
+# ("Prime Minister's Office", "Ministry of Finance", etc.), each followed by
+# a bullet list of "<title> Posted on: <date>" entries. Rather than needing
+# a GST-specific URL (there isn't one), this scrapes the whole page and does
+# the segregation itself: keep only items under the "Ministry of Finance"
+# heading (GST falls under the Department of Revenue there), then further
+# filter to ones that actually mention GST/e-way bill/e-invoice — PIB covers
+# every ministry's routine business, and Finance alone also publishes
+# banking, budget, and income-tax releases with nothing to do with GST.
+#
+# UNVERIFIED against the live DOM beyond that one screenshot — this
+# sandbox blocks pib.gov.in the same as every other *.gov.in host. Looks
+# like a classic server-rendered ASPX page (not an SPA), so this tries
+# plain requests.get() first, same as the reliable scrape_cbic() above;
+# the driver parameter exists in case a live run shows JS rendering is
+# actually needed, the same escape hatch scrape_nic_announcements has.
+GST_RELEVANCE_RE = re.compile(
+    r"\bGST\b|Goods and Services Tax|\bCGST\b|\bSGST\b|\bIGST\b|\bGSTN\b|\bCBIC\b|e[\s-]?way[\s-]?bill|e[\s-]?invoic",
+    re.IGNORECASE,
+)
+
+
+def scrape_pib_finance_gst(driver=None):
+    items = []
+    try:
+        if driver is not None:
+            driver.get(PIB_URL)
+            time.sleep(4)
+            html = driver.page_source
+        else:
+            resp = requests.get(PIB_URL, headers=HEADERS, timeout=20)
+            resp.raise_for_status()
+            html = resp.text
+    except Exception as exc:  # noqa: BLE001 — this source is best-effort
+        print(f"  [debug] PIB: request to {PIB_URL} failed: {exc}")
+        return items
+
+    soup = BeautifulSoup(html, "html.parser")
+    MAX_ITEMS = 20
+    current_ministry = None
+    scanned_finance_items = 0
+    for el in soup.find_all(["h1", "h2", "h3", "h4", "li"]):
+        if el.name in ("h1", "h2", "h3", "h4"):
+            current_ministry = el.get_text(strip=True)
+            continue
+        if not current_ministry or "ministry of finance" not in current_ministry.lower():
+            continue
+        if len(items) >= MAX_ITEMS:
+            break
+        scanned_finance_items += 1
+
+        link = el.find("a", href=True)
+        if not link:
+            continue
+        title = link.get_text(strip=True)
+        if not title or len(title.split()) < 3:
+            continue
+
+        # Scoped to Finance already; still need the GST-relevance check —
+        # Finance alone covers banking, budget, income tax, etc. too.
+        text = el.get_text(" ", strip=True)
+        if not GST_RELEVANCE_RE.search(title) and not GST_RELEVANCE_RE.search(text):
+            continue
+
+        item_date = parse_bare_date_text(text) or extract_date_from_text(text)
+        if item_date is None:
+            continue
+
+        href = urljoin(PIB_URL, link["href"])
+        dept = classify_gst_subtopic(title)
+        items.append(to_regulatory_update(
+            title=title, href=href, dept=dept, category="Press Release",
+            priority="Medium", item_date=item_date, needs_review=False,
+        ))
+
+    print(f"  [debug] PIB: {scanned_finance_items} item(s) under 'Ministry of Finance', {len(items)} GST-relevant")
+    return items
+
+
 def create_driver(headless=True):
     # headless=False exists for fetch_nic_updates_local.py: a real person
     # confirmed docs.ewaybillgst.gov.in loads fine in their own normal
@@ -1183,6 +1266,17 @@ def main():
         new_items += tax_info_items
     except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
         print(f"CBIC Tax Information scrape failed (other sources above are unaffected): {exc}")
+
+    # PIB (Press Information Bureau), Ministry of Finance, GST-relevant only
+    # — plain requests.get() by default (no driver passed), same reasoning
+    # as scrape_cbic() above: looks like a classic server-rendered page, not
+    # an SPA, so try the cheap path first.
+    try:
+        pib_items = scrape_pib_finance_gst()
+        print(f"PIB: found {len(pib_items)} item(s).")
+        new_items += pib_items
+    except Exception as exc:  # noqa: BLE001 — deliberately broad: this source is best-effort
+        print(f"PIB scrape failed (other sources above are unaffected): {exc}")
 
     # NIC e-Invoice and e-Way Bill "Announcements" pages — plain requests.get(),
     # no Selenium needed. Each isolated in its own try/except, same reasoning
