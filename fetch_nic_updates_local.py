@@ -1,11 +1,11 @@
 """
 fetch_nic_updates_local.py
 -------------------------------------------------------------------------
-Standalone companion to scrape_and_notify.py, for NIC e-Invoice and
-e-Way Bill announcements specifically.
+Standalone companion to scrape_and_notify.py, for NIC e-Invoice,
+e-Way Bill, and PIB (Press Information Bureau) announcements specifically.
 
 WHY THIS IS SEPARATE FROM scrape_and_notify.py: that script runs on
-GitHub Actions' hosted runners, and both NIC hosts block those runners
+GitHub Actions' hosted runners, and these hosts block those runners
 outright —
     - docs.ewaybillgst.gov.in: Akamai's edge WAF returns a literal
       "Access Denied" page (errors.edgesuite.net) to the runner's IP,
@@ -14,15 +14,19 @@ outright —
     - einv-apisandbox.nic.in: the connection times out at the TCP level
       — no response at all, consistent with IP-allowlisting on a
       developer "sandbox" subdomain meant for registered GSPs/ASPs.
-Both are confirmed whole-domain blocks (announcements.html AND
-release-notes.html fail identically), not anything scraper code can
-route around from that environment.
+    - www.pib.gov.in: confirmed 2026-10-30 — a plain requests.get() gets
+      a 403, and even the shared Selenium driver gets inconsistent
+      results from a runner IP (once past the block with 0 matches,
+      then a flat "Access Denied" page a few minutes later on the next
+      run) — the same short-terse-block signature as the e-Way Bill site.
+All three are confirmed blocks from GitHub Actions' IP ranges, not
+anything scraper code can route around from that environment.
 
 This script exists to run somewhere that ISN'T blocked — your own
 machine, an office network, or a self-hosted GitHub Actions runner —
 reusing the actual parsing logic from scrape_and_notify.py (imported,
-not duplicated) so there's one source of truth for how a NIC
-announcement gets turned into a dashboard item.
+not duplicated) so there's one source of truth for how an announcement
+gets turned into a dashboard item.
 
 USAGE
     python fetch_nic_updates_local.py                 # dry run: scrape + report, don't touch data.json
@@ -67,6 +71,7 @@ from scrape_and_notify import (
     load_existing,
     save_data,
     scrape_nic_announcements,
+    scrape_pib_finance_gst,
 )
 
 
@@ -110,14 +115,15 @@ def main():
     driver = None
     try:
         # headless=False: confirmed 2026-10-27 that docs.ewaybillgst.gov.in
-        # loads fine in a normal browser but Akamai blocks a headless
-        # Selenium-driven Chrome every time — a visible window is the
-        # actual fix, not just a fallback. This will briefly pop up a real
-        # Chrome window while the script runs; that's expected and fine
-        # for an interactive/scheduled run on your own desktop.
+        # (and, as of 2026-10-30, www.pib.gov.in too) load fine in a normal
+        # browser but Akamai-style WAFs block a headless Selenium-driven
+        # Chrome — a visible window is the actual fix, not just a fallback.
+        # This will briefly pop up a real Chrome window while the script
+        # runs; that's expected and fine for an interactive/scheduled run
+        # on your own desktop.
         driver = create_driver(headless=False)
     except Exception as exc:  # noqa: BLE001 — fall back to requests-only if Chrome isn't set up locally
-        print(f"Could not start a local Chrome driver ({exc}); e-Way Bill will fall back to requests.get(), which may not be enough on its own.")
+        print(f"Could not start a local Chrome driver ({exc}); e-Way Bill/PIB will fall back to requests.get(), which may not be enough on its own.")
 
     new_items = []
     try:
@@ -133,6 +139,13 @@ def main():
         new_items += ewaybill_items
     except Exception as exc:  # noqa: BLE001 — one source failing shouldn't stop the other
         print(f"NIC e-Way Bill scrape failed: {exc}")
+
+    try:
+        pib_items = scrape_pib_finance_gst(driver=driver)
+        print(f"PIB: found {len(pib_items)} item(s).")
+        new_items += pib_items
+    except Exception as exc:  # noqa: BLE001 — one source failing shouldn't stop the others
+        print(f"PIB scrape failed: {exc}")
     finally:
         if driver is not None:
             driver.quit()
@@ -158,7 +171,7 @@ def main():
 
     if args.push:
         run_git("add", "data.json")
-        committed = run_git("commit", "-m", f"Add {len(deduped)} NIC e-Invoice/e-Way Bill update(s)")
+        committed = run_git("commit", "-m", f"Add {len(deduped)} NIC/PIB update(s)")
         if committed:
             if not run_git("push"):
                 print("Push failed — check git output above (likely needs `git pull` first, or auth isn't configured on this machine).")

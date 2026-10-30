@@ -792,12 +792,18 @@ def scrape_cbic_tax_information(driver):
 # every ministry's routine business, and Finance alone also publishes
 # banking, budget, and income-tax releases with nothing to do with GST.
 #
-# UNVERIFIED against the live DOM beyond that one screenshot — this
-# sandbox blocks pib.gov.in the same as every other *.gov.in host. Looks
-# like a classic server-rendered ASPX page (not an SPA), so this tries
-# plain requests.get() first, same as the reliable scrape_cbic() above;
-# the driver parameter exists in case a live run shows JS rendering is
-# actually needed, the same escape hatch scrape_nic_announcements has.
+# CONFIRMED BLOCKED from GitHub Actions (2026-10-30, runs #41006695989 and
+# #41007118342): plain requests.get() gets a 403; routing through the
+# shared Selenium driver instead gets inconsistent results — once past
+# the block with 0 matching headings, then a flat "Access Denied" page
+# (303 chars, a single <h1>) on the very next run a few minutes later.
+# That's the same short-terse-block signature as docs.ewaybillgst.gov.in's
+# Akamai edge WAF (see scrape_nic_announcements / fetch_nic_updates_local.py),
+# which only loads reliably from a real desktop browser, not a runner's IP
+# range, headless or not. This is left wired in here (harmless — it's
+# wrapped in a try/except, and the block may not be 100% consistent) but
+# the real, reliable path is fetch_nic_updates_local.py on the user's own
+# machine, which calls this same function with headless=False.
 GST_RELEVANCE_RE = re.compile(
     r"\bGST\b|Goods and Services Tax|\bCGST\b|\bSGST\b|\bIGST\b|\bGSTN\b|\bCBIC\b|e[\s-]?way[\s-]?bill|e[\s-]?invoic",
     re.IGNORECASE,
