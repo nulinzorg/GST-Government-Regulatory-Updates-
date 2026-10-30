@@ -809,7 +809,7 @@ def scrape_pib_finance_gst(driver=None):
     try:
         if driver is not None:
             driver.get(PIB_URL)
-            time.sleep(4)
+            time.sleep(8)
             html = driver.page_source
         else:
             resp = requests.get(PIB_URL, headers=HEADERS, timeout=20)
@@ -820,6 +820,18 @@ def scrape_pib_finance_gst(driver=None):
         return items
 
     soup = BeautifulSoup(html, "html.parser")
+    print(f"  [debug] PIB: {len(html)} chars loaded, <li> count: {len(soup.find_all('li'))}, h1-h4 count: {len(soup.find_all(['h1','h2','h3','h4']))}")
+    # DIAGNOSTIC (2026-10-30): 0 "Ministry of Finance" headings matched on
+    # the first Selenium-routed run even though the 403 was gone, so the
+    # heading tag assumption itself needs checking against real output —
+    # printing whatever text IS found in h1-h4 tags, and separately
+    # whether "Ministry of Finance" appears ANYWHERE regardless of tag, to
+    # find out whether it's a heading-tag problem or a render-timing one.
+    heading_texts = [h.get_text(strip=True) for h in soup.find_all(["h1", "h2", "h3", "h4"])][:15]
+    print(f"  [debug] PIB: first h1-h4 texts found: {heading_texts}")
+    finance_anywhere = soup.find(string=re.compile("ministry of finance", re.IGNORECASE))
+    print(f"  [debug] PIB: 'Ministry of Finance' text found anywhere on page: {finance_anywhere is not None}" + (f", in a <{finance_anywhere.parent.name}> tag" if finance_anywhere else ""))
+
     MAX_ITEMS = 20
     current_ministry = None
     scanned_finance_items = 0
