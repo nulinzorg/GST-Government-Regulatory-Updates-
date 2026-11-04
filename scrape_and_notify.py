@@ -1029,7 +1029,18 @@ Based on the ACTUAL CONTENT above (not just the title), respond with ONLY a JSON
             "source": "ai",
         }
     except Exception as exc:  # noqa: BLE001 — AI analysis is an enhancement, never a hard dependency
-        print(f"  [debug] AI analysis failed for {title[:50]!r}, falling back to keywords: {exc}")
+        # requests.raise_for_status() raises an HTTPError whose default str()
+        # is just "400 Client Error: Bad Request for url: ..." — it discards
+        # the response body, which is exactly where Anthropic's API explains
+        # *why* (e.g. {"error": {"type": "invalid_request_error", ...}}).
+        # Surface that body so the next failure is actually diagnosable
+        # instead of a dead-end generic message (confirmed 2026-11-04: the
+        # first real item to reach this call failed with nothing but "400
+        # Client Error: Bad Request" in the log).
+        detail = str(exc)
+        if isinstance(exc, requests.exceptions.HTTPError) and exc.response is not None:
+            detail = f"HTTP {exc.response.status_code} — {exc.response.text[:500]}"
+        print(f"  [debug] AI analysis failed for {title[:50]!r}, falling back to keywords: {detail}")
         priority, impact = classify_notification(title, full_text)
         return {"priority": priority, "softwareImpact": impact, "summary": title, "keyChanges": [], "publishedDate": None, "source": "keyword-fallback"}
 
