@@ -1108,5 +1108,20 @@
     "date": "2026-11-01",
     "_needsReview": false,
     "id": 74
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Revision in E-Way Bill and Consolidated E-Way Bill Numbering Formats w.e.f. 1 January 2027",
+    "summary": "Revision in E-Way Bill and Consolidated E-Way Bill Numbering Formats w.e.f. 1 January 2027",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/687",
+    "keyChanges": [],
+    "effectiveDate": "2026-11-04",
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-11-04",
+    "_needsReview": false,
+    "id": 75
   }
 ]
