@@ -1138,5 +1138,20 @@
     "date": "2026-11-17",
     "_needsReview": false,
     "id": 76
+  },
+  {
+    "department": "GSTN",
+    "category": "Notification",
+    "title": "Advisory: Introduction of Metro Rail as an Additional Mode of Transport in the E-Way Bill System",
+    "summary": "Advisory: Introduction of Metro Rail as an Additional Mode of Transport in the E-Way Bill System",
+    "priority": "High",
+    "softwareImpact": true,
+    "source": "https://services.gst.gov.in/services/advisoryandreleases/read/689",
+    "keyChanges": [],
+    "effectiveDate": "2026-11-20",
+    "actionRequired": "Review the source document for details.",
+    "date": "2026-11-20",
+    "_needsReview": false,
+    "id": 77
   }
 ]
